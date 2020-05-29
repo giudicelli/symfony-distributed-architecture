@@ -1,0 +1,43 @@
+{
+    "name": "giudicelli/symfony-distributed-architecture",
+    "type": "symfony-bundle",
+    "description": "Symfony distributed architecture",
+    "keywords": [],
+    "homepage": "https://github.com/giudicelli/symfony-distributed-architecture",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Frédéric Giudicelli"
+        }
+    ],
+    "require": {
+        "php": ">=7.2.5",
+        "psr/log": "~1.0",
+        "giudicelli/distributed-architecture": ">=0.3.0",
+        "symfony/console": "^5.2@dev",
+        "symfony/config": "^5.2@dev",
+        "symfony/http-kernel": "^5.2@dev",
+        "symfony/dependency-injection": "^5.2@dev",
+        "symfony/framework-bundle": "^5.2@dev"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9",
+        "symfony/yaml": "^5.2@dev"
+    },
+    "conflict": {
+    },
+    "suggest": {
+    },
+    "autoload": {
+        "psr-4": { "giudicelli\\DistributedArchitectureBundle\\": "./" },
+        "exclude-from-classmap": [
+            "/Tests/"
+        ]
+    },
+    "minimum-stability": "dev",
+    "extra": {
+        "branch-alias": {
+            "dev-master": "master-dev"
+        }
+    }
+}

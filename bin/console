@@ -1,0 +1,107 @@
+#!/usr/bin/env php
+<?php
+
+namespace giudicelli\DistributedArchitectureBundle\Tests;
+
+require dirname(__DIR__).'/vendor/autoload.php';
+
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Component\Config\Loader\LoaderInterface;
+use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\Container;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\KernelInterface;
+
+set_time_limit(0);
+
+class FakeKernel implements KernelInterface
+{
+    private $container;
+
+    public function __construct()
+    {
+        $this->container = new Container();
+    }
+
+    public function handle(Request $request, int $type = self::MASTER_REQUEST, bool $catch = true)
+    {
+    }
+
+    public function getContainer()
+    {
+        return $this->container;
+    }
+
+    public function registerBundles()
+    {
+    }
+
+    public function registerContainerConfiguration(LoaderInterface $loader)
+    {
+    }
+
+    public function boot()
+    {
+    }
+
+    public function shutdown()
+    {
+    }
+
+    public function getBundle(string $name)
+    {
+        return null;
+    }
+
+    public function locateResource(string $name)
+    {
+        return '';
+    }
+
+    public function getEnvironment()
+    {
+        return 'dev';
+    }
+
+    public function isDebug()
+    {
+        return false;
+    }
+
+    public function getProjectDir()
+    {
+        return __DIR__.'/../';
+    }
+
+    public function getStartTime()
+    {
+        return 0;
+    }
+
+    public function getCacheDir()
+    {
+        return '';
+    }
+
+    public function getLogDir()
+    {
+        return '';
+    }
+
+    public function getCharset()
+    {
+        return 'utf-8';
+    }
+
+    public function getBundles()
+    {
+        return [];
+    }
+}
+
+$kernel = new FakeKernel();
+$application = new Application($kernel);
+$application->add(new MyCommand());
+
+$tester = new CommandTester($application->get('da:my-command'));
+$tester->execute(['--params' => $_SERVER['argv'][3]], []);
