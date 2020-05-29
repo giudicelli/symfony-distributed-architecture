@@ -7,6 +7,6 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 /**
  * @author Frédéric Giudicelli
  */
-class SwiftmailerBundle extends Bundle
+class DistributedArchitectureBundle extends Bundle
 {
 }
