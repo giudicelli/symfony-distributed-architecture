@@ -2,6 +2,11 @@
 
 namespace giudicelli\DistributedArchitectureBundle\Command;
 
+use giudicelli\DistributedArchitecture\Master\GroupConfigInterface;
+use giudicelli\DistributedArchitecture\Master\Handlers\GroupConfig;
+use giudicelli\DistributedArchitecture\Master\ProcessConfigInterface;
+use giudicelli\DistributedArchitectureBundle\Handler\Local\Config as ConfigLocal;
+use giudicelli\DistributedArchitectureBundle\Handler\Remote\Config as ConfigRemote;
 use giudicelli\DistributedArchitectureBundle\Launcher;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -48,14 +53,14 @@ class MasterCommand extends Command
             $this->launcher->setMaxRunningTime($input->getOption('max-running-time'));
         }
 
-        /** @var array<GroupConfigInterface> */
         $groupConfigs = $this->getContainer()->getParameter('distributed_architecture.groups');
-
         if (!$groupConfigs) {
             return 0;
         }
 
-        $this->launcher->run($groupConfigs);
+        $config = $this->parseConfig($groupConfigs);
+
+        $this->launcher->run($config);
 
         return 0;
     }
@@ -88,5 +93,65 @@ class MasterCommand extends Command
         $this->addOption('max-running-time', null, InputOption::VALUE_OPTIONAL, 'Set the max running time for the master.');
         $this->addOption('max-process-timeout', null, InputOption::VALUE_OPTIONAL, 'Set the maximum number of times a process can timeout before it is considered dead and restarted. Default is 3.');
         $this->addOption('timeout', null, InputOption::VALUE_OPTIONAL, 'Set the timeout for the master. Default is 300');
+    }
+
+    /** @return GroupConfigInterface[] */
+    protected function parseConfig(array $groups): array
+    {
+        $groupConfigs = [];
+        foreach ($groups as $name => $group) {
+            $groupConfig = ['name' => $name];
+            $processes = [];
+            foreach ($group as $key => $value) {
+                $key = $this->fixSnakeCase($key);
+                switch ($key) {
+                    case 'local':
+                        $processes[] = $this->parseProcessConfig($value, ConfigLocal::class);
+
+                    break;
+                    case 'remote':
+                        foreach ($value as $remote) {
+                            $processes[] = $this->parseProcessConfig($remote, ConfigRemote::class);
+                        }
+
+                    break;
+                    default:
+                        $groupConfig[$key] = $value;
+
+                    break;
+                }
+            }
+            $groupConfigObject = new GroupConfig();
+            $groupConfigObject->fromArray($groupConfig);
+            $groupConfigObject->setProcessConfigs($processes);
+            $groupConfigs[] = $groupConfigObject;
+        }
+
+        return $groupConfigs;
+    }
+
+    protected function parseProcessConfig(array $config, string $class): ProcessConfigInterface
+    {
+        $processConfig = [];
+        foreach ($config as $key => $value) {
+            $processConfig[$this->fixSnakeCase($key)] = $value;
+        }
+        $processConfigObject = new $class();
+        $processConfigObject->fromArray($processConfig);
+
+        return $processConfigObject;
+    }
+
+    protected function fixSnakeCase(string $value): string
+    {
+        $parts = explode('_', $value);
+        if (1 === count($parts)) {
+            return $value;
+        }
+        for ($i = 1; $i < count($parts); ++$i) {
+            $parts[$i] = ucfirst($parts[$i]);
+        }
+
+        return join('', $parts);
     }
 }
