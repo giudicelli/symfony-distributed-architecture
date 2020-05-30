@@ -8,38 +8,21 @@ use giudicelli\DistributedArchitecture\Master\ProcessConfigInterface;
 use giudicelli\DistributedArchitectureBundle\Handler\Local\Config as ConfigLocal;
 use giudicelli\DistributedArchitectureBundle\Handler\Remote\Config as ConfigRemote;
 use giudicelli\DistributedArchitectureBundle\Launcher;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class MasterCommand extends Command
 {
-    /** @var LoggerInterface */
-    protected $logger;
-
-    /** @var Launcher */
-    protected $launcher;
+    protected static $defaultName = 'distributed_architecture:run-master';
 
     /**
      * @var null|ContainerInterface
      */
     private $container;
-
-    public function __construct(
-        LoggerInterface $logger
-    ) {
-        $this->logger = $logger;
-        $this->launcher = new Launcher($logger);
-        parent::__construct();
-    }
-
-    public function setContainer(ContainerInterface $container = null)
-    {
-        $this->container = $container;
-    }
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -60,9 +43,16 @@ class MasterCommand extends Command
 
         $config = $this->parseConfig($groupConfigs);
 
-        $this->launcher->run($config);
+        $logger = new ConsoleLogger($output);
+        $launcher = new Launcher($logger);
+        $launcher->run($config);
 
         return 0;
+    }
+
+    public function setContainer(ContainerInterface $container = null)
+    {
+        $this->container = $container;
     }
 
     /**
@@ -87,7 +77,6 @@ class MasterCommand extends Command
 
     protected function configure()
     {
-        $this->setName('distributed_architecture:run-master');
         $this->setDescription('Launch all configured processes');
 
         $this->addOption('max-running-time', null, InputOption::VALUE_OPTIONAL, 'Set the max running time for the master.');
