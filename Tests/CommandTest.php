@@ -311,7 +311,7 @@ final class CommandTest extends TestCase
         $application = new Application($kernelInterface);
         $application->add(new MasterCommand($logger));
 
-        $tester = new CommandTester($application->get('da:run-master'));
+        $tester = new CommandTester($application->get('distributed_architecture:run-master'));
         $tester->execute($input, $options);
 
         return $tester;

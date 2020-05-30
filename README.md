@@ -11,21 +11,21 @@ $ composer require giudicelli/symfony-distributed-architecture
 
 ## Using
 
-To run your distributed architecture you will mainly need to use one command "bin/console da:run-master". It will parse the configuration and launch all processes.
+To run your distributed architecture you will mainly need to use one command "bin/console distributed_architecture:run-master". It will parse the configuration and launch all processes.
 
-The following options are handled by "da:run-master":
+The following options are handled by "distributed_architecture:run-master":
 - --max-running-time will gracefully stop all slave processes after a certain duration. It's usually a good idea to use this as Symfony commands tend to use more and more memory over time. A duration of 3600 seconds is in most case a good value. Default is 0, meaning the master will only exit once all the slaves a exited.
 - --max-process-timeout Set the maximum number of times a process can timeout before it is considered dead and restarted. Default is 3.
 - --timeout Set the timeout for the master. Default is 300.
 
 ### Configuration
 
-Place your configuration in "config/packages/distributed-architecture.yaml".
+Place your configuration in "config/packages/distributed_architecture.yaml".
 
 Here is a complete example of a configuration.
 
 ```yaml
-distributed-architecture:
+distributed_architecture:
   groups:
     First Group: # The name of the group
       command: app:test-command # The command to be executed using bin/console
@@ -101,7 +101,7 @@ Usually your configuration is the same between your master machine and your slav
 When all those are true, your configuration can be very minimal.
 
 ```yaml
-distributed-architecture:
+distributed_architecture:
   groups:
     First Group: # The name of the group
       command: app:test-command # The command to be executed using bin/console

@@ -150,7 +150,7 @@ class MasterCommand extends Command
 
     protected function configure()
     {
-        $this->setName('distributed-architecture:run-master');
+        $this->setName('distributed_architecture:run-master');
         $this->setDescription('Launch all configured processes');
 
         $this->addOption('max-running-time', null, InputOption::VALUE_OPTIONAL, 'Set the max running time for the master.');
