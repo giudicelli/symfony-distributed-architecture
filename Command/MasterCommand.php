@@ -2,10 +2,6 @@
 
 namespace giudicelli\DistributedArchitectureBundle\Command;
 
-use giudicelli\DistributedArchitecture\Master\Handlers\GroupConfig;
-use giudicelli\DistributedArchitecture\Master\ProcessConfigInterface;
-use giudicelli\DistributedArchitectureBundle\Handler\Local\Config as ConfigLocal;
-use giudicelli\DistributedArchitectureBundle\Handler\Remote\Config as ConfigRemote;
 use giudicelli\DistributedArchitectureBundle\Launcher;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -52,80 +48,16 @@ class MasterCommand extends Command
             $this->launcher->setMaxRunningTime($input->getOption('max-running-time'));
         }
 
-        $groups = $this->getContainer()->getParameter('distributed-architecture.groups');
+        /** @var array<GroupConfigInterface> */
+        $groupConfigs = $this->getContainer()->getParameter('distributed_architecture.groups');
 
-        if (empty($groups['groups'])) {
-            return 0;
-        }
-
-        $groupConfigs = $this->parseConfig($groups['groups']);
-        if (empty($groupConfigs)) {
+        if (!$groupConfigs) {
             return 0;
         }
 
         $this->launcher->run($groupConfigs);
 
         return 0;
-    }
-
-    /** @return GroupConfig[] */
-    protected function parseConfig(array $groups): array
-    {
-        $groupConfigs = [];
-        foreach ($groups as $name => $group) {
-            $groupConfig = ['name' => $name];
-            $processes = [];
-            foreach ($group as $key => $value) {
-                $key = $this->fixSnakeCase($key);
-                switch ($key) {
-                    case 'local':
-                        $processes[] = $this->parseProcessConfig($value, ConfigLocal::class);
-
-                    break;
-                    case 'remote':
-                        foreach ($value as $remote) {
-                            $processes[] = $this->parseProcessConfig($remote, ConfigRemote::class);
-                        }
-
-                    break;
-                    default:
-                        $groupConfig[$key] = $value;
-
-                    break;
-                }
-            }
-            $groupConfigObject = new GroupConfig();
-            $groupConfigObject->fromArray($groupConfig);
-            $groupConfigObject->setProcessConfigs($processes);
-            $groupConfigs[] = $groupConfigObject;
-        }
-
-        return $groupConfigs;
-    }
-
-    protected function parseProcessConfig(array $config, string $class): ProcessConfigInterface
-    {
-        $processConfig = [];
-        foreach ($config as $key => $value) {
-            $processConfig[$this->fixSnakeCase($key)] = $value;
-        }
-        $processConfigObject = new $class();
-        $processConfigObject->fromArray($processConfig);
-
-        return $processConfigObject;
-    }
-
-    protected function fixSnakeCase(string $value): string
-    {
-        $parts = explode('_', $value);
-        if (1 === count($parts)) {
-            return $value;
-        }
-        for ($i = 1; $i < count($parts); ++$i) {
-            $parts[$i] = ucfirst($parts[$i]);
-        }
-
-        return join('', $parts);
     }
 
     /**

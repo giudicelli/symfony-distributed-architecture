@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace giudicelli\DistributedArchitectureBundle\Tests;
 
 use giudicelli\DistributedArchitectureBundle\Command\MasterCommand;
-use giudicelli\DistributedArchitectureBundle\DependencyInjection\Configuration;
+use giudicelli\DistributedArchitectureBundle\DependencyInjection\DistributedArchitectureExtension;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
-use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Console\Tester\CommandTester;
-use Symfony\Component\DependencyInjection\Container;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Yaml\Yaml;
@@ -319,17 +318,12 @@ final class CommandTest extends TestCase
 
     private function buildContainer(string $config): ContainerInterface
     {
+        $container = new ContainerBuilder();
+
         $config = Yaml::parse($config);
 
-        $processor = new Processor();
-        $configuration = new Configuration();
-        $processedConfiguration = $processor->processConfiguration(
-            $configuration,
-            [$config]
-        );
-
-        $container = new Container();
-        $container->setParameter('distributed-architecture.groups', $processedConfiguration);
+        $extension = new DistributedArchitectureExtension();
+        $extension->load($config, $container);
 
         return $container;
     }
@@ -338,16 +332,17 @@ final class CommandTest extends TestCase
     {
         $paramsStr = '';
         if ($params) {
-            $paramsStr = "        params:\n";
+            $paramsStr = "            params:\n";
             foreach ($params as $key => $value) {
-                $paramsStr .= "            {$key}: {$value}\n";
+                $paramsStr .= "                {$key}: {$value}\n";
             }
         }
 
         return '
-groups:
-    '.$name.':
-        command: '.$command.'
+distributed_architecture:
+    groups:
+        '.$name.':
+            command: '.$command.'
 '.$paramsStr.'
 ';
     }
@@ -355,8 +350,8 @@ groups:
     private function buildLocalGroupConfig(string $name, string $command, $count = 1, array $params = []): ContainerInterface
     {
         $config = $this->buildBaseConfig($name, $command, $params);
-        $config .= '        local:
-            instances_count: '.$count.'
+        $config .= '            local:
+                instances_count: '.$count.'
 ';
 
         return $this->buildContainer($config);
@@ -365,11 +360,11 @@ groups:
     private function buildRemoteGroupConfig(string $name, string $command, $count = 1, array $params = []): ContainerInterface
     {
         $config = $this->buildBaseConfig($name, $command, $params);
-        $config .= '        remote:
-            -
-                instances_count: '.$count.'
-                hosts:
-                    - 127.0.0.1
+        $config .= '            remote:
+                -
+                    instances_count: '.$count.'
+                    hosts:
+                        - 127.0.0.1
 ';
 
         return $this->buildContainer($config);

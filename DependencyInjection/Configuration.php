@@ -9,7 +9,7 @@ class Configuration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder()
     {
-        $treeBuilder = new TreeBuilder('distributed-architecture');
+        $treeBuilder = new TreeBuilder('distributed_architecture');
 
         $this->handleRoot($treeBuilder->getRootNode());
 
