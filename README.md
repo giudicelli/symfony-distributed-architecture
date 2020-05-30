@@ -138,7 +138,11 @@ distributed_architecture:
 
 ### Slave command
 
-A slave command must extend the "giudicelli\DistributedArchitectureBundle\Command\AbstractSlaveCommand" class. Using the above example, here is a possible implementation for "app:test-command" or "app:test-command-2".
+A slave command must extend the "giudicelli\DistributedArchitectureBundle\Command\AbstractSlaveCommand" class. 
+
+You may not pass it options, the only acceptable options are defined by "AbstractSlaveCommand" and are passed by "distributed_architecture:run-master". If you need to pass it some parameters, please use the "params" entries in the group's configuration.
+
+Using the above example, here is a possible implementation for "app:test-command" or "app:test-command-2".
 
 ```php
 <?php
