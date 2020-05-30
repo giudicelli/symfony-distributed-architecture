@@ -104,4 +104,4 @@ $application = new Application($kernel);
 $application->add(new MyCommand());
 
 $tester = new CommandTester($application->get('da:my-command'));
-$tester->execute(['--params' => $_SERVER['argv'][3]], []);
+$tester->execute(['--gda-params' => $_SERVER['argv'][3]], []);

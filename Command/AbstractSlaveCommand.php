@@ -12,12 +12,16 @@ abstract class AbstractSlaveCommand extends Command
 {
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        $handler = new Handler($input->getOption('params'));
+        if ($input->getOption('gda-params')) {
+            $handler = new Handler($input->getOption('gda-params'));
 
-        $me = $this;
-        $handler->run(function (Handler $handler) use ($me) {
-            $me->runSlave($handler);
-        });
+            $me = $this;
+            $handler->run(function (Handler $handler) use ($me) {
+                $me->runSlave($handler);
+            });
+        } else {
+            $this->runSlave(null);
+        }
 
         return 0;
     }
@@ -25,8 +29,8 @@ abstract class AbstractSlaveCommand extends Command
     protected function configure()
     {
         parent::configure();
-        $this->addOption('params', null, InputOption::VALUE_REQUIRED, 'Internal params.');
+        $this->addOption('gda-params', null, InputOption::VALUE_OPTIONAL, 'Internal params.');
     }
 
-    abstract protected function runSlave(Handler $handler): void;
+    abstract protected function runSlave(?Handler $handler): void;
 }

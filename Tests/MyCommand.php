@@ -14,7 +14,7 @@ class MyCommand extends AbstractSlaveCommand
         $this->setDescription('Launch the slave test command');
     }
 
-    protected function runSlave(Handler $handler): void
+    protected function runSlave(?Handler $handler): void
     {
         $groupConfig = $handler->getGroupConfig();
 

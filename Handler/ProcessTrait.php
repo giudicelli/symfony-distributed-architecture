@@ -19,6 +19,6 @@ trait ProcessTrait
 
         $params = escapeshellarg(json_encode($params));
 
-        return $bin.' bin/console '.$this->groupConfig->getCommand().' --params '.$params;
+        return $bin.' bin/console '.$this->groupConfig->getCommand().' --gda-params '.$params;
     }
 }

@@ -307,8 +307,11 @@ final class CommandTest extends TestCase
         /** @var KernelInterface */
         $kernelInterface = $kernel;
 
+        $masterCommand = new MasterCommand();
+        $masterCommand->setLogger($logger);
+
         $application = new Application($kernelInterface);
-        $application->add(new MasterCommand($logger));
+        $application->add($masterCommand);
 
         $tester = new CommandTester($application->get('distributed_architecture:run-master'));
         $tester->execute($input, $options);

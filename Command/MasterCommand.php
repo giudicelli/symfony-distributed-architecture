@@ -8,6 +8,7 @@ use giudicelli\DistributedArchitecture\Master\ProcessConfigInterface;
 use giudicelli\DistributedArchitectureBundle\Handler\Local\Config as ConfigLocal;
 use giudicelli\DistributedArchitectureBundle\Handler\Remote\Config as ConfigRemote;
 use giudicelli\DistributedArchitectureBundle\Launcher;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -24,16 +25,31 @@ class MasterCommand extends Command
      */
     private $container;
 
+    /** @var LoggerInterface */
+    private $logger;
+
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
+
     public function execute(InputInterface $input, OutputInterface $output): int
     {
+        if ($this->logger) {
+            $logger = $this->logger;
+        } else {
+            $logger = new ConsoleLogger($output);
+        }
+        $launcher = new Launcher($logger);
+
         if ($input->getOption('timeout')) {
-            $this->launcher->setTimeout($input->getOption('timeout'));
+            $launcher->setTimeout($input->getOption('timeout'));
         }
         if ($input->getOption('max-process-timeout')) {
-            $this->launcher->setMaxProcessTimeout($input->getOption('max-process-timeout'));
+            $launcher->setMaxProcessTimeout($input->getOption('max-process-timeout'));
         }
         if ($input->getOption('max-running-time')) {
-            $this->launcher->setMaxRunningTime($input->getOption('max-running-time'));
+            $launcher->setMaxRunningTime($input->getOption('max-running-time'));
         }
 
         $groupConfigs = $this->getContainer()->getParameter('distributed_architecture.groups');
@@ -43,8 +59,6 @@ class MasterCommand extends Command
 
         $config = $this->parseConfig($groupConfigs);
 
-        $logger = new ConsoleLogger($output);
-        $launcher = new Launcher($logger);
         $launcher->run($config);
 
         return 0;
