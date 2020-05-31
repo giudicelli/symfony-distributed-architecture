@@ -15,7 +15,7 @@ To run your distributed architecture you will mainly need to use one command "bi
 
 The following options are handled by "distributed_architecture:run-master":
 - --max-running-time will gracefully stop all slave processes after a certain duration. It's usually a good idea to use this as Symfony commands tend to use more and more memory over time. A duration of 3600 seconds is in most case a good value. Default is 0, meaning the master will only exit once all the slaves a exited.
-- --max-process-timeout Set the maximum number of times a process can timeout before it is considered dead and restarted. Default is 3.
+- --max-process-timeout Set the maximum number of times a process can timeout before it is considered dead and removed. Default is 3.
 - --timeout Set the timeout for the master. Default is 300.
 
 ### Configuration
