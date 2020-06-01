@@ -13,7 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
  *      @ORM\Index(name="process_status_started_at_idx", columns={"started_at"}),
  *      @ORM\Index(name="process_status_stopped_at_idx", columns={"stopped_at"}),
  *      @ORM\Index(name="process_status_last_seen_at_idx", columns={"last_seen_at"}),
- *      @ORM\Index(name="process_status_status_idx", columns={"status_at"}),
+ *      @ORM\Index(name="process_status_status_idx", columns={"status"}),
  *      @ORM\Index(name="process_status_host_idx", columns={"host"}),
  *      @ORM\Index(name="process_status_command_idx", columns={"command"})
  * })
