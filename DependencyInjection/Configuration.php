@@ -20,6 +20,7 @@ class Configuration implements ConfigurationInterface
     {
         $rootNode
             ->children()
+            ->booleanNode('save_states')->defaultTrue()->end()
             ->arrayNode('groups')
             ->info('The list of processes\'s groups.')
             ->arrayPrototype()

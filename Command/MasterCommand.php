@@ -5,9 +5,11 @@ namespace giudicelli\DistributedArchitectureBundle\Command;
 use giudicelli\DistributedArchitecture\Master\GroupConfigInterface;
 use giudicelli\DistributedArchitecture\Master\Handlers\GroupConfig;
 use giudicelli\DistributedArchitecture\Master\ProcessConfigInterface;
+use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
 use giudicelli\DistributedArchitectureBundle\Handler\Local\Config as ConfigLocal;
 use giudicelli\DistributedArchitectureBundle\Handler\Remote\Config as ConfigRemote;
 use giudicelli\DistributedArchitectureBundle\Launcher;
+use giudicelli\DistributedArchitectureBundle\Repository\ProcessStatusRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -27,6 +29,16 @@ class MasterCommand extends Command
 
     /** @var LoggerInterface */
     private $logger;
+
+    /** @var ProcessStatusRepository */
+    private $processStatusRepository;
+
+    public function __construct(ProcessStatusRepository $processStatusRepository = null)
+    {
+        $this->processStatusRepository = $processStatusRepository;
+
+        parent::__construct();
+    }
 
     public function setLogger(LoggerInterface $logger)
     {
@@ -59,7 +71,15 @@ class MasterCommand extends Command
 
         $config = $this->parseConfig($groupConfigs);
 
-        $launcher->run($config);
+        $saveStates = $this->getContainer()->getParameter('distributed_architecture.save_states');
+        if ($saveStates && $this->processStatusRepository) {
+            $this->processStatusRepository->deleteAll();
+            $events = new EventsHandler($this->processStatusRepository);
+        } else {
+            $events = null;
+        }
+
+        $launcher->run($config, $events);
 
         return 0;
     }

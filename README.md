@@ -26,6 +26,7 @@ Here is a complete example of a configuration.
 
 ```yaml
 distributed_architecture:
+  save_states: true # Save each process' state in the ProcessStatus entity
   groups:
     First Group: # The name of the group
       command: app:test-command # The command to be executed using bin/console
