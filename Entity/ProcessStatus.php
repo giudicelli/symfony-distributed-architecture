@@ -67,7 +67,7 @@ class ProcessStatus
     private $command;
 
     /**
-     * @ORM\Column(type="text")
+     * @ORM\Column(type="text", nullable=true)
      */
     private $output;
 
@@ -184,7 +184,7 @@ class ProcessStatus
         return $this->output;
     }
 
-    public function setOutput(string $output): self
+    public function setOutput(?string $output): self
     {
         $this->output = $output;
 
