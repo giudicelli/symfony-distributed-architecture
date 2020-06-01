@@ -5,10 +5,9 @@ namespace giudicelli\DistributedArchitectureBundle\Handler\Remote;
 use giudicelli\DistributedArchitecture\Master\Handlers\Remote\Process as RemoteProcess;
 use giudicelli\DistributedArchitectureBundle\Handler\Local\Config as ConfigLocal;
 use giudicelli\DistributedArchitectureBundle\Handler\ProcessTrait;
-use giudicelli\DistributedArchitectureBundle\Launcher;
 
 /**
- * A symnfony consumer process started on a remote host.
+ * A symnfony process started on a remote host.
  *
  * @author Frédéric Giudicelli
  *
@@ -26,10 +25,5 @@ class Process extends RemoteProcess
     protected function getRemoteConfigClass(): string
     {
         return ConfigLocal::class;
-    }
-
-    protected function getRemoteLauncherClass(): string
-    {
-        return Launcher::class;
     }
 }
