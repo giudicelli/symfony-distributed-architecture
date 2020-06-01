@@ -33,9 +33,13 @@ class MasterCommand extends Command
     /** @var ProcessStatusRepository */
     private $processStatusRepository;
 
-    public function __construct(ProcessStatusRepository $processStatusRepository = null)
+    /** @var EventsHandler */
+    private $eventsHandler;
+
+    public function __construct(?ProcessStatusRepository $processStatusRepository = null, ?EventsHandler $eventsHandler = null)
     {
         $this->processStatusRepository = $processStatusRepository;
+        $this->eventsHandler = $eventsHandler;
 
         parent::__construct();
     }
@@ -72,9 +76,9 @@ class MasterCommand extends Command
         $config = $this->parseConfig($groupConfigs);
 
         $saveStates = $this->getContainer()->getParameter('distributed_architecture.save_states');
-        if ($saveStates && $this->processStatusRepository) {
+        if ($saveStates && $this->processStatusRepository && $this->eventsHandler) {
             $this->processStatusRepository->deleteAll();
-            $events = new EventsHandler($this->processStatusRepository);
+            $events = $this->eventsHandler;
         } else {
             $events = null;
         }

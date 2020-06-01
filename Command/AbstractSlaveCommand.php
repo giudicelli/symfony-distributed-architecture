@@ -2,8 +2,8 @@
 
 namespace giudicelli\DistributedArchitectureBundle\Command;
 
+use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
 use giudicelli\DistributedArchitectureBundle\Handler;
-use giudicelli\DistributedArchitectureBundle\Repository\ProcessStatusRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -11,12 +11,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class AbstractSlaveCommand extends Command
 {
-    /** @var ProcessStatusRepository */
-    private $processStatusRepository;
+    /** @var EventsHandler */
+    private $eventsHandler;
 
-    public function __construct(?ProcessStatusRepository $processStatusRepository)
+    public function __construct(?EventsHandler $eventsHandler = null)
     {
-        $this->processStatusRepository = $processStatusRepository;
+        $this->eventsHandler = $eventsHandler;
 
         parent::__construct();
     }
@@ -24,7 +24,7 @@ abstract class AbstractSlaveCommand extends Command
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         if ($input->getOption('gda-params')) {
-            $handler = new Handler($input->getOption('gda-params'), $this->processStatusRepository);
+            $handler = new Handler($input->getOption('gda-params'), $this->eventsHandler);
 
             $me = $this;
             $handler->run(function (Handler $handler) use ($me) {
