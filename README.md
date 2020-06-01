@@ -1,5 +1,5 @@
 
-# symfony-distributed-architecture
+# symfony-distributed-architecture ![CI](https://github.com/giudicelli/symfony-distributed-architecture/workflows/CI/badge.svg)
 
 Symfony Distributed Architecture is a Symfony bundle. It extends [distributed-architecture](https://github.com/giudicelli/distributed-architecture) to provide compatibility with the Command system from Symfony.
 
