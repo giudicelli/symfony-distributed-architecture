@@ -5,6 +5,13 @@ namespace giudicelli\DistributedArchitectureBundle\DependencyInjection;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
+/**
+ * Parse the configuration from YAML to a clean array.
+ *
+ * @internal
+ *
+ * @author Frédéric Giudicelli
+ */
 class Configuration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder()

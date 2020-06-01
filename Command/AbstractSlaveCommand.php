@@ -9,6 +9,11 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * A Symfony abstract slave command. It handles the launching of the Handler class.
+ *
+ * @author Frédéric Giudicelli
+ */
 abstract class AbstractSlaveCommand extends Command
 {
     /** @var EventsHandler */
@@ -43,5 +48,10 @@ abstract class AbstractSlaveCommand extends Command
         $this->addOption('gda-params', null, InputOption::VALUE_OPTIONAL, 'Internal params.');
     }
 
+    /**
+     * This method need to be implemented, its purpose it the do the actual task the command is supposed to handle.
+     *
+     * @param null|Handler $handler null when the command wasn't started by the master, else an instance of the handler
+     */
     abstract protected function runSlave(?Handler $handler): void;
 }

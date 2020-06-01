@@ -6,6 +6,10 @@ use App\Repository\ProcessStatusRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
+ * This entity is used to store all started processes' status.
+ *
+ * @author Frédéric Giudicelli
+ *
  * @ORM\Entity(repositoryClass=ProcessStatusRepository::class)
  * @ORM\Table(indexes={
  *      @ORM\Index(name="process_status_group_name_idx", columns={"group_name"}),

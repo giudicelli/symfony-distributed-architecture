@@ -18,6 +18,11 @@ use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
+/**
+ * This is the main command to launch the distributed architecture. It will parse the configuration and start all the slave processes.
+ *
+ * @author Frédéric Giudicelli
+ */
 class MasterCommand extends Command
 {
     protected static $defaultName = 'distributed_architecture:run-master';
@@ -44,6 +49,11 @@ class MasterCommand extends Command
         parent::__construct();
     }
 
+    /**
+     * Used for the tests.
+     *
+     * @internal
+     */
     public function setLogger(LoggerInterface $logger)
     {
         $this->logger = $logger;
@@ -88,6 +98,11 @@ class MasterCommand extends Command
         return 0;
     }
 
+    /**
+     * Used for the tests.
+     *
+     * @internal
+     */
     public function setContainer(ContainerInterface $container = null)
     {
         $this->container = $container;
@@ -122,7 +137,13 @@ class MasterCommand extends Command
         $this->addOption('timeout', null, InputOption::VALUE_OPTIONAL, 'Set the timeout for the master. Default is 300');
     }
 
-    /** @return GroupConfigInterface[] */
+    /**
+     * Transform the groups configuration as it was parsed by Configuration into an array of GroupConfigInterface.
+     *
+     * @internal
+     *
+     * @return GroupConfigInterface[] The list of group configs
+     */
     protected function parseConfig(array $groups): array
     {
         $groupConfigs = [];
@@ -157,6 +178,13 @@ class MasterCommand extends Command
         return $groupConfigs;
     }
 
+    /**
+     * Transform the process configuration as it was parsed by Configuration into a ProcessConfigInterface.
+     *
+     * @internal
+     *
+     * @return ProcessConfigInterface The process config
+     */
     protected function parseProcessConfig(array $config, string $class): ProcessConfigInterface
     {
         $processConfig = [];
@@ -169,6 +197,15 @@ class MasterCommand extends Command
         return $processConfigObject;
     }
 
+    /**
+     * Transform a string from Snake Case to Camel Case.
+     *
+     * @internal
+     *
+     * @param string $value the string to convert
+     *
+     * @return string The converted string
+     */
     protected function fixSnakeCase(string $value): string
     {
         $parts = explode('_', $value);

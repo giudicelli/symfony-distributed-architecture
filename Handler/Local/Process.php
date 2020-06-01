@@ -6,7 +6,7 @@ use giudicelli\DistributedArchitecture\Master\Handlers\Local\Process as LocalPro
 use giudicelli\DistributedArchitectureBundle\Handler\ProcessTrait;
 
 /**
- * A symfony process started on the same computer as the master.
+ * A Symfony process started on the same computer as the master.
  *
  * @author Frédéric Giudicelli
  *
@@ -16,6 +16,9 @@ class Process extends LocalProcess
 {
     use ProcessTrait;
 
+    /**
+     * {@inheritdoc}
+     */
     public static function getConfigClass(): string
     {
         return Config::class;

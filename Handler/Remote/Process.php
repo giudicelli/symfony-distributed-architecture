@@ -7,7 +7,7 @@ use giudicelli\DistributedArchitectureBundle\Handler\Local\Config as ConfigLocal
 use giudicelli\DistributedArchitectureBundle\Handler\ProcessTrait;
 
 /**
- * A symnfony process started on a remote host.
+ * A Symfony process started on a remote host.
  *
  * @author Frédéric Giudicelli
  *
@@ -17,11 +17,17 @@ class Process extends RemoteProcess
 {
     use ProcessTrait;
 
+    /**
+     * {@inheritdoc}
+     */
     public static function getConfigClass(): string
     {
         return Config::class;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     protected function getRemoteConfigClass(): string
     {
         return ConfigLocal::class;

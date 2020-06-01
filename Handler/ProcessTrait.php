@@ -2,10 +2,17 @@
 
 namespace giudicelli\DistributedArchitectureBundle\Handler;
 
+/**
+ * This Trait is used by both remote and local process to generate the proper shell command to start a Symfony process.
+ *
+ * @author Frédéric Giudicelli
+ *
+ * @internal
+ */
 trait ProcessTrait
 {
     /**
-     * Return the basic shell command to execute this process.
+     * {@inheritdoc}
      */
     protected function getShellCommand(array $params): string
     {

@@ -8,6 +8,11 @@ use giudicelli\DistributedArchitecture\Master\ProcessInterface;
 use giudicelli\DistributedArchitectureBundle\Entity\ProcessStatus;
 use giudicelli\DistributedArchitectureBundle\Repository\ProcessStatusRepository;
 
+/**
+ * The implementation of EventsInterface stores each process' status into a ProcessStatus entity.
+ *
+ * @author Frédéric Giudicelli
+ */
 class EventsHandler implements EventsInterface
 {
     protected $processStatusRepository;
@@ -85,6 +90,13 @@ class EventsHandler implements EventsInterface
         $this->processStatusRepository->update($processStatus);
     }
 
+    /**
+     * Return the ProcessStatus entity corresponding to a ProcessInterface process. If it doesn't exist, it is created.
+     *
+     * @param ProcessInterface $process The process
+     *
+     * @return ProcessStatus The ProcessStatus entity
+     */
     protected function getProcessStatus(ProcessInterface $process): ProcessStatus
     {
         $processStatus = $this->processStatusRepository->find($process->getId());

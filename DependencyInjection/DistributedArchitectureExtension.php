@@ -8,6 +8,13 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
+/**
+ * Load this bundle.
+ *
+ * @internal
+ *
+ * @author Frédéric Giudicelli
+ */
 class DistributedArchitectureExtension extends Extension
 {
     public function load(array $configs, ContainerBuilder $container)
