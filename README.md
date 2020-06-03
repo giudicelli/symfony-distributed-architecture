@@ -9,6 +9,14 @@ Symfony Distributed Architecture is a Symfony bundle. It extends [distributed-ar
 $ composer require giudicelli/symfony-distributed-architecture
 ```
 
+If you're planning on using the processes' state feature, you will need to make sure the table is created or updated.
+After installing symfony-distributed-architecture, or updating it, please make run to run the following commands.
+
+```bash
+$ bin/console make:migration
+$ bin/console doctrine:migrations:migrate
+```
+
 ## Using
 
 To run your distributed architecture you will mainly need to use one command "bin/console distributed_architecture:run-master". It will parse the configuration and launch all processes.
@@ -26,7 +34,7 @@ Here is a complete example of a configuration.
 
 ```yaml
 distributed_architecture:
-  save_states: true # Save each process' state in the ProcessStatus entity
+  save_states: true # Save each process' state in the ProcessStatus entity, default is true
   groups:
     First Group: # The name of the group
       command: app:test-command # The command to be executed using bin/console
@@ -103,6 +111,7 @@ When all those are true, your configuration can be very minimal.
 
 ```yaml
 distributed_architecture:
+  save_states: true # Save each process' state in the ProcessStatus entity, default is true
   groups:
     First Group: # The name of the group
       command: app:test-command # The command to be executed using bin/console
@@ -177,4 +186,13 @@ class TestCommand extends AbstractSlaveCommand
     }
 }
 
+```
+
+ ### Processes state
+
+When "save_states" is set to true, each slave process' state will be stored in an entity called ProcessStatus.
+
+ ```yaml
+distributed_architecture:
+  save_states: true # Save each process' state in the ProcessStatus entity, default is true
 ```
