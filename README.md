@@ -9,6 +9,14 @@ Symfony Distributed Architecture is a Symfony bundle. It extends [distributed-ar
 $ composer require giudicelli/symfony-distributed-architecture
 ```
 
+If you're planning on using the processes' state feature, you will need to make sure the table is created or updated.
+After installing symfony-distributed-architecture, or updating it, please make run to run the following commands.
+
+```bash
+$ bin/console make:migration
+$ bin/console doctrine:migrations:migrate
+```
+
 ## Using
 
 To run your distributed architecture you will mainly need to use one command "bin/console distributed_architecture:run-master". It will parse the configuration and launch all processes.
@@ -26,6 +34,7 @@ Here is a complete example of a configuration.
 
 ```yaml
 distributed_architecture:
+  save_states: true # Save each process' state in the ProcessStatus entity, default is true
   groups:
     First Group: # The name of the group
       command: app:test-command # The command to be executed using bin/console
@@ -102,6 +111,7 @@ When all those are true, your configuration can be very minimal.
 
 ```yaml
 distributed_architecture:
+  save_states: true # Save each process' state in the ProcessStatus entity, default is true
   groups:
     First Group: # The name of the group
       command: app:test-command # The command to be executed using bin/console
@@ -151,6 +161,7 @@ namespace App\Command;
 
 use giudicelli\DistributedArchitectureBundle\Command\AbstractSlaveCommand;
 use giudicelli\DistributedArchitectureBundle\Handler;
+use Psr\Log\LoggerInterface;
 
 class TestCommand extends AbstractSlaveCommand
 {
@@ -162,7 +173,7 @@ class TestCommand extends AbstractSlaveCommand
     }
 
     // This method must be implemented
-    protected function runSlave(Handler $handler): void
+    protected function runSlave(?Handler $handler, ?LoggerInterface $logger): void
     {
         $groupConfig = $handler->getGroupConfig();
 
@@ -171,9 +182,23 @@ class TestCommand extends AbstractSlaveCommand
         // Handler::sleep will return false if we were
         // asked to stop by the master command
         while($handler->sleep(1)) {
+
+            // Anything echoed here will be considered log level "info" by the master process.
+            // If you want another level for certain messages, use $logger.
+            // echo "Hello world!\n" is the same as $logger->info('Hello world!')
+
             echo $params['Param1']." ".$params['Param2']."\n";
         }
     }
 }
 
+```
+
+ ### Processes state
+
+When "save_states" is set to true, each slave process' state will be stored in an entity called ProcessStatus.
+
+ ```yaml
+distributed_architecture:
+  save_states: true # Save each process' state in the ProcessStatus entity, default is true
 ```

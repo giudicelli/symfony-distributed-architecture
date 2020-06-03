@@ -4,6 +4,7 @@ namespace giudicelli\DistributedArchitectureBundle\Tests;
 
 use giudicelli\DistributedArchitectureBundle\Command\AbstractSlaveCommand;
 use giudicelli\DistributedArchitectureBundle\Handler;
+use Psr\Log\LoggerInterface;
 
 class MyCommand extends AbstractSlaveCommand
 {
@@ -14,7 +15,7 @@ class MyCommand extends AbstractSlaveCommand
         $this->setDescription('Launch the slave test command');
     }
 
-    protected function runSlave(?Handler $handler): void
+    protected function runSlave(?Handler $handler, ?LoggerInterface $logger): void
     {
         $groupConfig = $handler->getGroupConfig();
 
