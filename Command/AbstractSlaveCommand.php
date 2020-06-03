@@ -4,6 +4,7 @@ namespace giudicelli\DistributedArchitectureBundle\Command;
 
 use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
 use giudicelli\DistributedArchitectureBundle\Handler;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -32,11 +33,11 @@ abstract class AbstractSlaveCommand extends Command
             $handler = new Handler($input->getOption('gda-params'), $this->eventsHandler);
 
             $me = $this;
-            $handler->run(function (Handler $handler) use ($me) {
-                $me->runSlave($handler);
+            $handler->run(function (Handler $handler, LoggerInterface $logger) use ($me) {
+                $me->runSlave($handler, $logger);
             });
         } else {
-            $this->runSlave(null);
+            $this->runSlave(null, null);
         }
 
         return 0;
@@ -51,7 +52,8 @@ abstract class AbstractSlaveCommand extends Command
     /**
      * This method need to be implemented, its purpose it the do the actual task the command is supposed to handle.
      *
-     * @param null|Handler $handler null when the command wasn't started by the master, else an instance of the handler
+     * @param null|Handler         $handler null when the command wasn't started by the master, else an instance of the handler
+     * @param null|LoggerInterface $logger  null when the command wasn't started by the master, else a LoggerInterface to allow logs to be properly passed back to the master command
      */
-    abstract protected function runSlave(?Handler $handler): void;
+    abstract protected function runSlave(?Handler $handler, ?LoggerInterface $logger): void;
 }
