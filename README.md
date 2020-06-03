@@ -161,6 +161,7 @@ namespace App\Command;
 
 use giudicelli\DistributedArchitectureBundle\Command\AbstractSlaveCommand;
 use giudicelli\DistributedArchitectureBundle\Handler;
+use Psr\Log\LoggerInterface;
 
 class TestCommand extends AbstractSlaveCommand
 {
@@ -172,7 +173,7 @@ class TestCommand extends AbstractSlaveCommand
     }
 
     // This method must be implemented
-    protected function runSlave(Handler $handler): void
+    protected function runSlave(?Handler $handler, ?LoggerInterface $logger): void
     {
         $groupConfig = $handler->getGroupConfig();
 
@@ -181,6 +182,11 @@ class TestCommand extends AbstractSlaveCommand
         // Handler::sleep will return false if we were
         // asked to stop by the master command
         while($handler->sleep(1)) {
+
+            // Anything echoed here will be considered log level "info" by the master process.
+            // If you want another level for certain messages, use $logger.
+            // echo "Hello world!\n" is the same as $logger->info('Hello world!')
+
             echo $params['Param1']." ".$params['Param2']."\n";
         }
     }
