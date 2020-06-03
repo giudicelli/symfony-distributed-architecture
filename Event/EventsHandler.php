@@ -106,7 +106,7 @@ class EventsHandler implements EventsInterface
                 ->setId($process->getId())
                 ->setGroupId($process->getGroupId())
                 ->setGroupName($process->getGroupConfig()->getName())
-                ->setHost($process->getHost())
+                ->setHost(gethostname())
                 ->setCommand($process->getGroupConfig()->getCommand())
             ;
         }

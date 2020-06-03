@@ -66,7 +66,7 @@ class MasterCommand extends Command
         } else {
             $logger = new ConsoleLogger($output);
         }
-        $launcher = new Launcher($logger);
+        $launcher = new Launcher(true, $logger);
 
         if ($input->getOption('timeout')) {
             $launcher->setTimeout($input->getOption('timeout'));
