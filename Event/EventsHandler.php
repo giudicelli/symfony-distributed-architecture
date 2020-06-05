@@ -5,8 +5,11 @@ namespace giudicelli\DistributedArchitectureBundle\Event;
 use giudicelli\DistributedArchitecture\Master\EventsInterface;
 use giudicelli\DistributedArchitecture\Master\LauncherInterface;
 use giudicelli\DistributedArchitecture\Master\ProcessInterface;
+use giudicelli\DistributedArchitectureBundle\Entity\MasterCommand;
 use giudicelli\DistributedArchitectureBundle\Entity\ProcessStatus;
+use giudicelli\DistributedArchitectureBundle\Repository\MasterCommandRepository;
 use giudicelli\DistributedArchitectureBundle\Repository\ProcessStatusRepository;
+use Psr\Log\LoggerInterface;
 
 /**
  * The implementation of EventsInterface stores each process' status into a ProcessStatus entity.
@@ -16,37 +19,81 @@ use giudicelli\DistributedArchitectureBundle\Repository\ProcessStatusRepository;
 class EventsHandler implements EventsInterface
 {
     protected $processStatusRepository;
+    protected $masterCommandRepository;
 
-    public function __construct(ProcessStatusRepository $processStatusRepository)
+    public function __construct(ProcessStatusRepository $processStatusRepository, MasterCommandRepository $masterCommandRepository)
     {
         $this->processStatusRepository = $processStatusRepository;
+        $this->processStatusRepository = $masterCommandRepository;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function started(LauncherInterface $launcher): void
+    public function started(LauncherInterface $launcher, LoggerInterface $logger): void
     {
     }
 
     /**
      * {@inheritdoc}
      */
-    public function check(LauncherInterface $launcher): void
+    public function check(LauncherInterface $launcher, LoggerInterface $logger): void
+    {
+        // Only the master launcher takes commands
+        if (!$launcher->isMaster()) {
+            return;
+        }
+
+        $masterCommand = $this->processStatusRepository->findOnePending();
+        if (!$masterCommand) {
+            return;
+        }
+        $masterCommand->setStatus(MasterCommand::STATUS_INPROGRESS);
+        $this->processStatusRepository->update($masterCommand);
+
+        switch ($masterCommand->getCommand()) {
+            case MasterCommand::COMMAND_START_ALL:
+                $launcher->runAll();
+
+            break;
+            case MasterCommand::COMMAND_STOP_ALL:
+                $params = $masterCommand->getParams();
+                $launcher->stopAll(!empty($params['force']));
+
+            break;
+            case MasterCommand::COMMAND_START_GROUP:
+                $launcher->runGroup($masterCommand->getGroupName());
+
+            break;
+            case MasterCommand::COMMAND_STOP_GROUP:
+                $params = $masterCommand->getParams();
+                $launcher->stopGroup($masterCommand->getGroupName(), !empty($params['force']));
+
+            break;
+            case MasterCommand::COMMAND_STOP:
+                $launcher->stop();
+
+            break;
+        }
+
+        $masterCommand
+            ->setStatus(MasterCommand::STATUS_DONE)
+            ->setHandledAt(new \DateTime())
+        ;
+        $this->processStatusRepository->update($masterCommand);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function stopped(LauncherInterface $launcher, LoggerInterface $logger): void
     {
     }
 
     /**
      * {@inheritdoc}
      */
-    public function stopped(LauncherInterface $launcher): void
-    {
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function processStarted(ProcessInterface $process): void
+    public function processStarted(ProcessInterface $process, LoggerInterface $logger): void
     {
         $processStatus = $this->getProcessStatus($process);
         $processStatus->setStartedAt(new \DateTime());
@@ -58,7 +105,7 @@ class EventsHandler implements EventsInterface
     /**
      * {@inheritdoc}
      */
-    public function processTimedout(ProcessInterface $process): void
+    public function processTimedout(ProcessInterface $process, LoggerInterface $logger): void
     {
         $processStatus = $this->getProcessStatus($process);
         $processStatus->setStatus('timedout');
@@ -69,7 +116,7 @@ class EventsHandler implements EventsInterface
     /**
      * {@inheritdoc}
      */
-    public function processStopped(ProcessInterface $process): void
+    public function processStopped(ProcessInterface $process, LoggerInterface $logger): void
     {
         $processStatus = $this->getProcessStatus($process);
         $processStatus->setStoppedAt(new \DateTime());
@@ -81,7 +128,7 @@ class EventsHandler implements EventsInterface
     /**
      * {@inheritdoc}
      */
-    public function processWasSeen(ProcessInterface $process, string $line): void
+    public function processWasSeen(ProcessInterface $process, string $line, LoggerInterface $logger): void
     {
         $processStatus = $this->getProcessStatus($process);
         $processStatus->setLastSeenAt(new \DateTime());
