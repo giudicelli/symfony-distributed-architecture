@@ -19,6 +19,8 @@ use Symfony\Component\Yaml\Yaml;
 /**
  * @internal
  * @coversNothing
+ *
+ * @author Frédéric Giudicelli
  */
 final class CommandTest extends TestCase
 {

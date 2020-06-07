@@ -6,6 +6,9 @@ use giudicelli\DistributedArchitectureBundle\Command\AbstractSlaveCommand;
 use giudicelli\DistributedArchitectureBundle\Handler;
 use Psr\Log\LoggerInterface;
 
+/**
+ * @author Frédéric Giudicelli
+ */
 class MyCommand extends AbstractSlaveCommand
 {
     protected function configure()
