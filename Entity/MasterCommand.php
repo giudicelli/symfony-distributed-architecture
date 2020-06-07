@@ -131,7 +131,7 @@ class MasterCommand
         return $this->groupName;
     }
 
-    public function setGroupName(string $groupName): self
+    public function setGroupName(?string $groupName): self
     {
         $this->groupName = $groupName;
 

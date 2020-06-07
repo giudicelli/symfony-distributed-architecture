@@ -24,7 +24,7 @@ class EventsHandler implements EventsInterface
     public function __construct(ProcessStatusRepository $processStatusRepository, MasterCommandRepository $masterCommandRepository)
     {
         $this->processStatusRepository = $processStatusRepository;
-        $this->processStatusRepository = $masterCommandRepository;
+        $this->masterCommandRepository = $masterCommandRepository;
     }
 
     /**
@@ -32,6 +32,8 @@ class EventsHandler implements EventsInterface
      */
     public function started(LauncherInterface $launcher, LoggerInterface $logger): void
     {
+        $masterStatus = $this->getMasterStatus($launcher);
+        $this->processStatusRepository->update($masterStatus);
     }
 
     /**
@@ -39,38 +41,49 @@ class EventsHandler implements EventsInterface
      */
     public function check(LauncherInterface $launcher, LoggerInterface $logger): void
     {
+        $masterStatus = $this->getMasterStatus($launcher);
+        $masterStatus
+            ->setLastSeenAt(new \DateTime())
+        ;
+        $this->processStatusRepository->update($masterStatus);
+
         // Only the master launcher takes commands
         if (!$launcher->isMaster()) {
             return;
         }
 
-        $masterCommand = $this->processStatusRepository->findOnePending();
+        $masterCommand = $this->masterCommandRepository->findOnePending();
         if (!$masterCommand) {
             return;
         }
         $masterCommand->setStatus(MasterCommand::STATUS_INPROGRESS);
-        $this->processStatusRepository->update($masterCommand);
+        $this->masterCommandRepository->update($masterCommand);
 
         switch ($masterCommand->getCommand()) {
             case MasterCommand::COMMAND_START_ALL:
+                $logger->notice('Handling command '.$masterCommand->getCommand());
                 $launcher->runAll();
 
             break;
             case MasterCommand::COMMAND_STOP_ALL:
                 $params = $masterCommand->getParams();
+                $logger->notice('Handling command '.$masterCommand->getCommand().' - force:'.!empty($params['force']));
                 $launcher->stopAll(!empty($params['force']));
 
             break;
             case MasterCommand::COMMAND_START_GROUP:
+                $logger->notice('Handling command '.$masterCommand->getCommand().'::'.$masterCommand->getGroupName());
                 $launcher->runGroup($masterCommand->getGroupName());
 
             break;
             case MasterCommand::COMMAND_STOP_GROUP:
                 $params = $masterCommand->getParams();
+                $logger->notice('Handling command '.$masterCommand->getCommand().'::'.$masterCommand->getGroupName().' - force:'.!empty($params['force']));
                 $launcher->stopGroup($masterCommand->getGroupName(), !empty($params['force']));
 
             break;
             case MasterCommand::COMMAND_STOP:
+                $logger->notice('Handling command '.$masterCommand->getCommand());
                 $launcher->stop();
 
             break;
@@ -80,7 +93,7 @@ class EventsHandler implements EventsInterface
             ->setStatus(MasterCommand::STATUS_DONE)
             ->setHandledAt(new \DateTime())
         ;
-        $this->processStatusRepository->update($masterCommand);
+        $this->masterCommandRepository->update($masterCommand);
     }
 
     /**
@@ -88,6 +101,12 @@ class EventsHandler implements EventsInterface
      */
     public function stopped(LauncherInterface $launcher, LoggerInterface $logger): void
     {
+        $masterStatus = $this->getMasterStatus($launcher);
+        $masterStatus
+            ->setStoppedAt(new \DateTime())
+            ->setStatus('stopped')
+        ;
+        $this->processStatusRepository->update($masterStatus);
     }
 
     /**
@@ -155,6 +174,35 @@ class EventsHandler implements EventsInterface
                 ->setGroupName($process->getGroupConfig()->getName())
                 ->setHost(gethostname())
                 ->setCommand($process->getGroupConfig()->getCommand())
+            ;
+        }
+
+        return $processStatus;
+    }
+
+    /**
+     * Return the ProcessStatus entity corresponding to a LauncherInterface launcher. If it doesn't exist, it is created.
+     *
+     * @param LauncherInterface $launcher The process
+     *
+     * @return ProcessStatus The ProcessStatus entity
+     */
+    protected function getMasterStatus(LauncherInterface $launcher): ProcessStatus
+    {
+        $id = crc32(gethostname().'-'.$launcher->isMaster());
+
+        $processStatus = $this->processStatusRepository->find($id);
+        if (!$processStatus) {
+            $processStatus = new ProcessStatus();
+            $processStatus
+                ->setId($id)
+                ->setGroupId(0)
+                ->setGroupName($launcher->isMaster() ? 'gda::master' : 'gda::master::remote')
+                ->setHost(gethostname())
+                ->setCommand('')
+                ->setStartedAt(new \DateTime())
+                ->setLastSeenAt(new \DateTime())
+                ->setStatus('started')
             ;
         }
 

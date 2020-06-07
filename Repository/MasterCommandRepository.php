@@ -7,6 +7,8 @@ use Doctrine\Persistence\ManagerRegistry;
 use giudicelli\DistributedArchitectureBundle\Entity\MasterCommand;
 
 /**
+ * @author Frédéric Giudicelli
+ *
  * @method null|MasterCommand find($id, $lockMode = null, $lockVersion = null)
  * @method null|MasterCommand findOneBy(array $criteria, array $orderBy = null)
  * @method MasterCommand[]    findAll()
@@ -19,6 +21,23 @@ class MasterCommandRepository extends ServiceEntityRepository
         parent::__construct($registry, MasterCommand::class);
     }
 
+    /**
+     * Delete all commands.
+     */
+    public function deleteAll(): void
+    {
+        $this->createQueryBuilder('mc')
+            ->delete()
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+    /**
+     * Return one pending command.
+     *
+     * @return null|MasterCommand A pending command or null there is none
+     */
     public function findOnePending(): ?MasterCommand
     {
         return $this->createQueryBuilder('mc')
@@ -29,6 +48,15 @@ class MasterCommandRepository extends ServiceEntityRepository
         ;
     }
 
+    /**
+     * Create a command.
+     *
+     * @param string      $command   The command
+     * @param null|string $groupName The optional group name
+     * @param null|array  $params    The optional params
+     *
+     * @return MasterCommand The created command
+     */
     public function create(string $command, ?string $groupName, ?array $params): MasterCommand
     {
         /** @var null|MasterCommand */
@@ -61,6 +89,11 @@ class MasterCommandRepository extends ServiceEntityRepository
         return $masterCommand;
     }
 
+    /**
+     * Update a command.
+     *
+     * @param MasterCommand $masterCommand The command to update
+     */
     public function update(MasterCommand $masterCommand): void
     {
         $this->getEntityManager()->persist($masterCommand);
