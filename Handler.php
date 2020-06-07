@@ -5,6 +5,11 @@ namespace giudicelli\DistributedArchitectureBundle;
 use giudicelli\DistributedArchitecture\Master\EventsInterface;
 use giudicelli\DistributedArchitecture\Slave\Handler as Handler_;
 
+/**
+ * {@inheritdoc}
+ *
+ * @author Frédéric Giudicelli
+ */
 class Handler extends Handler_
 {
     /** @var EventsInterface */
@@ -20,6 +25,9 @@ class Handler extends Handler_
         parent::__construct($params);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     protected function getCommandEventsObject(): ?EventsInterface
     {
         if (empty($this->params[self::PARAM_EVENTS_CLASS]) || !$this->eventsHandler) {

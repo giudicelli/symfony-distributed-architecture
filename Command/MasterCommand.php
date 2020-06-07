@@ -9,6 +9,8 @@ use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
 use giudicelli\DistributedArchitectureBundle\Handler\Local\Config as ConfigLocal;
 use giudicelli\DistributedArchitectureBundle\Handler\Remote\Config as ConfigRemote;
 use giudicelli\DistributedArchitectureBundle\Launcher;
+use giudicelli\DistributedArchitectureBundle\Logger\ServiceLogger;
+use giudicelli\DistributedArchitectureBundle\Repository\MasterCommandRepository;
 use giudicelli\DistributedArchitectureBundle\Repository\ProcessStatusRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -38,12 +40,16 @@ class MasterCommand extends Command
     /** @var ProcessStatusRepository */
     private $processStatusRepository;
 
+    /** @var MasterCommandRepository */
+    private $masterCommandRepository;
+
     /** @var EventsHandler */
     private $eventsHandler;
 
-    public function __construct(?ProcessStatusRepository $processStatusRepository = null, ?EventsHandler $eventsHandler = null)
+    public function __construct(?ProcessStatusRepository $processStatusRepository = null, ?MasterCommandRepository $masterCommandRepository = null, ?EventsHandler $eventsHandler = null)
     {
         $this->processStatusRepository = $processStatusRepository;
+        $this->masterCommandRepository = $masterCommandRepository;
         $this->eventsHandler = $eventsHandler;
 
         parent::__construct();
@@ -66,8 +72,19 @@ class MasterCommand extends Command
         } else {
             $logger = new ConsoleLogger($output);
         }
-        $launcher = new Launcher(true, $logger);
 
+        // Will fork a detached service
+        if ($input->getOption('service')) {
+            return $this->startAsService($input, $logger);
+        }
+
+        $runAsService = !empty(getenv('RUN_AS_SERVICE'));
+        if ($runAsService) {
+            // We want our logger to record the datetime
+            $logger = new ServiceLogger($logger);
+        }
+
+        $launcher = new Launcher(true, $logger);
         if ($input->getOption('timeout')) {
             $launcher->setTimeout($input->getOption('timeout'));
         }
@@ -86,14 +103,25 @@ class MasterCommand extends Command
         $config = $this->parseConfig($groupConfigs);
 
         $saveStates = $this->getContainer()->getParameter('distributed_architecture.save_states');
-        if ($saveStates && $this->processStatusRepository && $this->eventsHandler) {
+        if ($saveStates
+            && $this->processStatusRepository
+            && $this->masterCommandRepository) {
+            // Clear previous states
             $this->processStatusRepository->deleteAll();
-            $events = $this->eventsHandler;
+            $this->masterCommandRepository->deleteAll();
+
+            if ($this->eventsHandler) {
+                $events = $this->eventsHandler;
+            }
         } else {
             $events = null;
         }
 
-        $launcher->run($config, $events);
+        $launcher->run($config, $events, $runAsService);
+
+        if ($input->getOption('pid')) {
+            @unlink($input->getOption('pid'));
+        }
 
         return 0;
     }
@@ -106,6 +134,110 @@ class MasterCommand extends Command
     public function setContainer(ContainerInterface $container = null)
     {
         $this->container = $container;
+    }
+
+    protected function startAsService(InputInterface $input, LoggerInterface $logger): int
+    {
+        $runas_uid = null;
+        $runas_gid = null;
+
+        $is_root = (0 == posix_getuid());
+
+        if ($is_root) {
+            if ($input->getOption('group')) {
+                $group = posix_getgrnam($input->getOption('group'));
+                if (!$group) {
+                    $logger->critical('Group '.$input->getOption('group').' is unknown');
+
+                    return 1;
+                }
+                $runas_gid = $group['gid'];
+            }
+
+            if (!$input->getOption('user')) {
+                $logger->critical("You're running as root, you must specify a user");
+
+                return 1;
+            }
+
+            $user = posix_getpwnam($input->getOption('user'));
+            if (!$user) {
+                $logger->critical('User '.$input->getOption('user').' is unknown');
+
+                return 1;
+            }
+            $runas_uid = $user['uid'];
+            if (!$runas_gid) {
+                $runas_gid = $user['gid'];
+            }
+        }
+
+        switch (($pid = pcntl_fork())) {
+            case -1:
+                $logger->critical('Failed to fork');
+
+                return 1;
+            case 0:
+                // Child
+                $pid = posix_getpid();
+                // We can now switch to the runas user
+                if ($runas_uid) {
+                    posix_setgid($runas_uid);
+                }
+                if ($runas_gid) {
+                    posix_setuid($runas_gid);
+                }
+                posix_setsid();
+
+                if ($input->getOption('pid')) {
+                    if (!file_put_contents($input->getOption('pid'), $pid)) {
+                        $logger->critical('Failed to write to '.$input->getOption('pid'));
+
+                        return 1;
+                    }
+                }
+
+                if ($input->getOption('log')) {
+                    $fdout = fopen($input->getOption('log'), 'ab');
+                    if (!$fdout) {
+                        $logger->critical('Failed to open '.$input->getOption('log'));
+
+                        return 1;
+                    }
+                    \eio_dup2($fdout, STDOUT);
+                    \eio_dup2($fdout, STDERR);
+                    \eio_event_loop();
+                    fclose($fdout);
+                }
+
+                $args = [];
+                foreach ($_SERVER['argv'] as $arg) {
+                    if ('--service' === $arg) {
+                        continue;
+                    }
+                    $args[] = $arg;
+                }
+
+                $envs = [
+                    'RUN_AS_SERVICE' => 1,
+                    'LANG' => 'en_US.UTF-8',
+                ];
+
+                pcntl_exec(PHP_BINARY, $args, $envs);
+
+                break;
+            default:
+                // parent
+                sleep(2);
+                $status = 0;
+                if (0 != pcntl_waitpid($pid, $status, WNOHANG)) {
+                    $logger->critical('Forked service exited abnormally.');
+
+                    return 1;
+                }
+        }
+
+        return 0;
     }
 
     /**
@@ -132,9 +264,14 @@ class MasterCommand extends Command
     {
         $this->setDescription('Launch all configured processes');
 
-        $this->addOption('max-running-time', null, InputOption::VALUE_OPTIONAL, 'Set the max running time for the master.');
-        $this->addOption('max-process-timeout', null, InputOption::VALUE_OPTIONAL, 'Set the maximum number of times a process can timeout before it is considered dead and restarted. Default is 3.');
-        $this->addOption('timeout', null, InputOption::VALUE_OPTIONAL, 'Set the timeout for the master. Default is 300');
+        $this->addOption('max-running-time', null, InputOption::VALUE_REQUIRED, 'Set the max running time for the master.');
+        $this->addOption('max-process-timeout', null, InputOption::VALUE_REQUIRED, 'Set the maximum number of times a process can timeout before it is considered dead and restarted. Default is 3.');
+        $this->addOption('timeout', null, InputOption::VALUE_REQUIRED, 'Set the timeout for the master. Default is 300');
+        $this->addOption('service', null, InputOption::VALUE_NONE, 'Run as a service, do not exit when all processes are done, wait for commands');
+        $this->addOption('user', null, InputOption::VALUE_REQUIRED, 'When --service is activated, run as this user. Ignored if not root.');
+        $this->addOption('group', null, InputOption::VALUE_REQUIRED, 'When --service is activated, run as this group. Ignored if not root.');
+        $this->addOption('log', null, InputOption::VALUE_REQUIRED, 'When --service is activated, specify in which file to log.');
+        $this->addOption('pid', null, InputOption::VALUE_REQUIRED, 'When --service is activated, specify in which file to store the PID of the service.');
     }
 
     /**

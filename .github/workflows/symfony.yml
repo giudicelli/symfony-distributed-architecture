@@ -14,7 +14,7 @@ jobs:
       with:
         php-version: '7.3'
         tools: pecl
-        extensions: mbstring, pcntl, ssh2
+        extensions: mbstring, pcntl, ssh2, eio
     - run: |
         echo Enable SSH connection on localhost
         mkdir ~/.ssh || /bin/true
@@ -22,4 +22,4 @@ jobs:
         ssh-keygen -f ~/.ssh/id_rsa -N ''
         cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
     - run: composer install
-    - run: ./vendor/bin/phpunit Tests
+    - run: ./vendor/bin/phpunit Tests --debug
