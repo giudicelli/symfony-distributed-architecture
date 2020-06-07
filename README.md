@@ -3,6 +3,8 @@
 
 Symfony Distributed Architecture is a Symfony bundle. It extends [distributed-architecture](https://github.com/giudicelli/distributed-architecture) to provide compatibility with the Command system from Symfony.
 
+If you want to use an interface to control you distributed architecture, you can install [symfony-distributed-architecture-admin](https://github.com/giudicelli/symfony-distributed-architecture-admin).
+
 ## Installation
 
 ```bash
@@ -25,6 +27,11 @@ The following options are handled by "distributed_architecture:run-master":
 - --max-running-time will gracefully stop all slave processes after a certain duration. It's usually a good idea to use this as Symfony commands tend to use more and more memory over time. A duration of 3600 seconds is in most case a good value. Default is 0, meaning the master will only exit once all the slaves a exited.
 - --max-process-timeout Set the maximum number of times a process can timeout before it is considered dead and removed. Default is 3.
 - --timeout Set the timeout for the master. Default is 300.
+- --service Run as detached service, even when all processes will have exited, "distributed_architecture:run-master" will not exit. You can install [symfony-distributed-architecture-admin](https://github.com/giudicelli/symfony-distributed-architecture-admin) to control "distributed_architecture:run-master".
+- --user When --service is activated, run as this user. Ignored if not root.
+- --group When --service is activated, run as this group. Ignored if not root.
+- --log When --service is activated, specify in which file to log.
+- --pid When --service is activated, specify in which file to store the PID of the service.
 
 ### Configuration
 
@@ -197,6 +204,8 @@ class TestCommand extends AbstractSlaveCommand
  ### Processes state
 
 When "save_states" is set to true, each slave process' state will be stored in an entity called ProcessStatus.
+
+If you're planning on using [symfony-distributed-architecture-admin](https://github.com/giudicelli/symfony-distributed-architecture-admin), you need to activate this option.
 
  ```yaml
 distributed_architecture:
