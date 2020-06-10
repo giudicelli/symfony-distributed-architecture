@@ -34,6 +34,11 @@ class DistributedArchitectureExtension extends Extension
         } else {
             $container->setParameter('distributed_architecture.groups', $config['groups']);
         }
+        if (empty($config['queue_groups'])) {
+            $container->setParameter('distributed_architecture.queue_groups', null);
+        } else {
+            $container->setParameter('distributed_architecture.queue_groups', $config['queue_groups']);
+        }
         if (empty($config['save_states'])) {
             $container->setParameter('distributed_architecture.save_states', false);
         } else {
