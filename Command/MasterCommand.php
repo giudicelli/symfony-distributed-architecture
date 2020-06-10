@@ -2,6 +2,7 @@
 
 namespace giudicelli\DistributedArchitectureBundle\Command;
 
+use giudicelli\DistributedArchitecture\Master\GroupConfigInterface;
 use giudicelli\DistributedArchitecture\Master\Handlers\GroupConfig;
 use giudicelli\DistributedArchitecture\Master\ProcessConfigInterface;
 use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
@@ -98,6 +99,7 @@ class MasterCommand extends Command
             $launcher->setMaxRunningTime($input->getOption('max-running-time'));
         }
 
+        /** @var array<GroupConfigInterface> */
         $config = [];
         $groupConfigs = $this->getContainer()->getParameter('distributed_architecture.groups');
         if ($groupConfigs) {
@@ -106,7 +108,20 @@ class MasterCommand extends Command
 
         $groupConfigs = $this->getContainer()->getParameter('distributed_architecture.queue_groups');
         if ($groupConfigs) {
-            $config = array_merge($config, $this->parseQueueConfig($groupConfigs));
+            $queueConfig = $this->parseQueueConfig($groupConfigs);
+            // Make sure group names are unique
+            if ($config) {
+                foreach ($queueConfig as $queueGroupConfig) {
+                    foreach ($config as $groupConfig) {
+                        if ($queueGroupConfig->getName() === $groupConfig->getName()) {
+                            $logger->critical('Duplicate group name for '.$queueGroupConfig->getName());
+
+                            return 1;
+                        }
+                    }
+                }
+            }
+            $config = array_merge($config, $queueConfig);
         }
 
         if (!$config) {

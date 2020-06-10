@@ -103,7 +103,38 @@ final class QueueCommandTest extends TestCase
         $this->assertEquals($expected, $output);
     }
 
-    private function executeCommand(ContainerInterface $container, LoggerInterface $logger, $input = [], $options = []): CommandTester
+    /**
+     * @group mixed
+     */
+    public function testMixed(): void
+    {
+        $config = '
+distributed_architecture:
+    groups:
+        First Group:
+            command: toto
+            local:
+    queue_groups:
+        First Group:
+            command: toto
+            local_feeder:
+            consumers:
+                local:
+';
+        $container = $this->buildContainer($config);
+        $returnValue = $this->executeCommand($container, $this->logger);
+        $this->assertEquals(1, $returnValue, 'Command exits with code 1');
+
+        $output = $this->logger->getOutput();
+        sort($output);
+
+        $expected = [
+            'critical - Duplicate group name for First Group',
+        ];
+        $this->assertEquals($expected, $output);
+    }
+
+    private function executeCommand(ContainerInterface $container, LoggerInterface $logger, $input = [], $options = []): int
     {
         $kernel = $this->getMockBuilder(KernelInterface::class)->getMock();
         $kernel->expects($this->any())->method('getContainer')->willReturn($container);
@@ -119,9 +150,8 @@ final class QueueCommandTest extends TestCase
         $application->add($masterCommand);
 
         $tester = new CommandTester($application->get('distributed_architecture:run-master'));
-        $tester->execute($input, $options);
 
-        return $tester;
+        return $tester->execute($input, $options);
     }
 
     private function buildContainer(string $config): ContainerInterface

@@ -299,7 +299,7 @@ final class CommandTest extends TestCase
         $this->assertEquals($expected, $output);
     }
 
-    private function executeCommand(ContainerInterface $container, LoggerInterface $logger, $input = [], $options = []): CommandTester
+    private function executeCommand(ContainerInterface $container, LoggerInterface $logger, $input = [], $options = []): int
     {
         $kernel = $this->getMockBuilder(KernelInterface::class)->getMock();
         $kernel->expects($this->any())->method('getContainer')->willReturn($container);
@@ -315,9 +315,8 @@ final class CommandTest extends TestCase
         $application->add($masterCommand);
 
         $tester = new CommandTester($application->get('distributed_architecture:run-master'));
-        $tester->execute($input, $options);
 
-        return $tester;
+        return $tester->execute($input, $options);
     }
 
     private function buildContainer(string $config): ContainerInterface
