@@ -209,7 +209,7 @@ class Configuration implements ConfigurationInterface
         $parent
             ->integerNode('timeout')
             ->min(5)
-            ->defaultValue(30)
+            ->defaultValue(-1)
             ->info($group ? 'For all local/remote processes, set their timeout in seconds. This timeout indicates after which duration without any data from the process we should consider it dead and we should restart it.' : 'Overide the *timeout* value from the parent group.')
         ;
     }
