@@ -1,13 +1,13 @@
 <?php
 
-namespace giudicelli\DistributedArchitectureBundle\Handler\Remote;
+namespace giudicelli\DistributedArchitectureBundle\Handler\Remote\Feeder;
 
-use giudicelli\DistributedArchitecture\Master\Handlers\Remote\Process as RemoteProcess;
-use giudicelli\DistributedArchitectureBundle\Handler\Local\Config as LocalConfig;
+use giudicelli\DistributedArchitectureBundle\Handler\Local\Feeder\Config as LocalConfig;
 use giudicelli\DistributedArchitectureBundle\Handler\ProcessTrait;
+use giudicelli\DistributedArchitectureQueue\Master\Handlers\Feeder\Remote\Process as RemoteProcess;
 
 /**
- * A Symfony process started on a remote host.
+ * A Symfony feeder process started on a remote host.
  *
  * @author Frédéric Giudicelli
  *

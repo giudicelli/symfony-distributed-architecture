@@ -101,7 +101,8 @@ class FakeKernel implements KernelInterface
 
 $kernel = new FakeKernel();
 $application = new Application($kernel);
-$application->add(new MyCommand(null));
+$application->add(new MyCommand());
+$application->add(new MyQueueCommand());
 
-$tester = new CommandTester($application->get('da:my-command'));
+$tester = new CommandTester($application->get($_SERVER['argv'][1]));
 $tester->execute(['--gda-params' => $_SERVER['argv'][3]], []);

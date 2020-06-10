@@ -46,7 +46,7 @@ abstract class AbstractSlaveCommand extends Command
     protected function configure()
     {
         parent::configure();
-        $this->addOption('gda-params', null, InputOption::VALUE_OPTIONAL, 'Internal params.');
+        $this->addOption('gda-params', null, InputOption::VALUE_REQUIRED, 'Internal params.');
     }
 
     /**

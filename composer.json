@@ -14,7 +14,7 @@
         "php": ">=7.2.5",
         "ext-eio": "*",
         "psr/log": "~1.0",
-        "giudicelli/distributed-architecture": ">=0.4.1",
+        "giudicelli/distributed-architecture-queue": ">=0.4.0",
         "symfony/console": "^5",
         "symfony/config": "^5",
         "symfony/http-kernel": "^5",
@@ -33,7 +33,8 @@
     "autoload": {
         "psr-4": { "giudicelli\\DistributedArchitectureBundle\\": "./" },
         "exclude-from-classmap": [
-            "/Tests/"
+            "/Tests/",
+            "/bin/"
         ]
     },
     "minimum-stability": "dev",

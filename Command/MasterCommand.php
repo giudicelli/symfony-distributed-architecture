@@ -2,12 +2,15 @@
 
 namespace giudicelli\DistributedArchitectureBundle\Command;
 
-use giudicelli\DistributedArchitecture\Master\GroupConfigInterface;
 use giudicelli\DistributedArchitecture\Master\Handlers\GroupConfig;
 use giudicelli\DistributedArchitecture\Master\ProcessConfigInterface;
 use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
-use giudicelli\DistributedArchitectureBundle\Handler\Local\Config as ConfigLocal;
-use giudicelli\DistributedArchitectureBundle\Handler\Remote\Config as ConfigRemote;
+use giudicelli\DistributedArchitectureBundle\Handler\Local\Config as LocalConfig;
+use giudicelli\DistributedArchitectureBundle\Handler\Local\Consumer\Config as LocalConsumerConfig;
+use giudicelli\DistributedArchitectureBundle\Handler\Local\Feeder\Config as LocalFeederConfig;
+use giudicelli\DistributedArchitectureBundle\Handler\Remote\Config as RemoteConfig;
+use giudicelli\DistributedArchitectureBundle\Handler\Remote\Consumer\Config as RemoteConsumerConfig;
+use giudicelli\DistributedArchitectureBundle\Handler\Remote\Feeder\Config as RemoteFeederConfig;
 use giudicelli\DistributedArchitectureBundle\Launcher;
 use giudicelli\DistributedArchitectureBundle\Logger\ServiceLogger;
 use giudicelli\DistributedArchitectureBundle\Repository\MasterCommandRepository;
@@ -95,12 +98,16 @@ class MasterCommand extends Command
             $launcher->setMaxRunningTime($input->getOption('max-running-time'));
         }
 
+        $config = [];
         $groupConfigs = $this->getContainer()->getParameter('distributed_architecture.groups');
-        if (!$groupConfigs) {
-            return 0;
+        if ($groupConfigs) {
+            $config = $this->parseConfig($groupConfigs);
         }
 
-        $config = $this->parseConfig($groupConfigs);
+        $groupConfigs = $this->getContainer()->getParameter('distributed_architecture.queue_groups');
+        if ($groupConfigs) {
+            $config = array_merge($config, $this->parseQueueConfig($groupConfigs));
+        }
 
         $saveStates = $this->getContainer()->getParameter('distributed_architecture.save_states');
         if ($saveStates
@@ -291,12 +298,68 @@ class MasterCommand extends Command
                 $key = $this->fixSnakeCase($key);
                 switch ($key) {
                     case 'local':
-                        $processes[] = $this->parseProcessConfig($value, ConfigLocal::class);
+                        $processes[] = $this->parseProcessConfig($value, LocalConfig::class);
 
                     break;
                     case 'remote':
                         foreach ($value as $remote) {
-                            $processes[] = $this->parseProcessConfig($remote, ConfigRemote::class);
+                            $processes[] = $this->parseProcessConfig($remote, RemoteConfig::class);
+                        }
+
+                    break;
+                    default:
+                        $groupConfig[$key] = $value;
+
+                    break;
+                }
+            }
+            $groupConfigObject = new GroupConfig();
+            $groupConfigObject->fromArray($groupConfig);
+            $groupConfigObject->setProcessConfigs($processes);
+            $groupConfigs[] = $groupConfigObject;
+        }
+
+        return $groupConfigs;
+    }
+
+    /**
+     * Transform the groups configuration as it was parsed by Configuration into an array of GroupConfigInterface.
+     *
+     * @internal
+     *
+     * @return GroupConfigInterface[] The list of group configs
+     */
+    protected function parseQueueConfig(array $groups): array
+    {
+        $groupConfigs = [];
+        foreach ($groups as $name => $group) {
+            $groupConfig = ['name' => $name];
+            $processes = [];
+            foreach ($group as $key => $value) {
+                $key = $this->fixSnakeCase($key);
+                switch ($key) {
+                    case 'localFeeder':
+                        $processes[] = $this->parseProcessConfig($value, LocalFeederConfig::class);
+
+                    break;
+                    case 'remoteFeeder':
+                        $processes[] = $this->parseProcessConfig($value, RemoteFeederConfig::class);
+
+                    break;
+                    case 'consumers':
+                        foreach ($value as $consumerType => $consumer) {
+                            switch ($consumerType) {
+                                case 'local':
+                                    $processes[] = $this->parseProcessConfig($consumer, LocalConsumerConfig::class);
+
+                                break;
+                                case 'remote':
+                                    foreach ($consumer as $remote) {
+                                        $processes[] = $this->parseProcessConfig($remote, RemoteConsumerConfig::class);
+                                    }
+
+                                break;
+                            }
                         }
 
                     break;

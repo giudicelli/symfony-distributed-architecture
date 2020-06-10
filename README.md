@@ -1,7 +1,7 @@
 
 # symfony-distributed-architecture ![CI](https://github.com/giudicelli/symfony-distributed-architecture/workflows/CI/badge.svg)
 
-Symfony Distributed Architecture is a Symfony bundle. It extends [distributed-architecture](https://github.com/giudicelli/distributed-architecture) to provide compatibility with the Command system from Symfony.
+Symfony Distributed Architecture is a Symfony bundle. It extends [distributed-architecture](https://github.com/giudicelli/distributed-architecture) and [distributed-architecture-queue](https://github.com/giudicelli/distributed-architecture-queue) to provide compatibility with the Command system from Symfony.
 
 If you want to use an interface to control you distributed architecture, you can install [symfony-distributed-architecture-admin](https://github.com/giudicelli/symfony-distributed-architecture-admin).
 
@@ -11,7 +11,7 @@ If you want to use an interface to control you distributed architecture, you can
 $ composer require giudicelli/symfony-distributed-architecture
 ```
 
-If you're planning on using the processes' state feature, you will need to make sure the table is created or updated.
+If you're planning on using the processes' state feature, you will need to make sure the tables are created or updated.
 After installing symfony-distributed-architecture, or updating it, please make run to run the following commands.
 
 ```bash
@@ -36,6 +36,12 @@ The following options are handled by "distributed_architecture:run-master":
 ### Configuration
 
 Place your configuration in "config/packages/distributed_architecture.yaml".
+
+To see all available configuration options, you can execute the following command:
+
+```bash
+$ bin/console config:dump-reference distributed_architecture
+```
 
 Here is a complete example of a configuration.
 
@@ -80,17 +86,39 @@ distributed_architecture:
         Param1: Value1 
         Param2: Value2
       local: # We want to run a local process
-        instances_count: 1 # We want to run 2 instances of the command
+        instances_count: 1 # We want to run 1 instance of the command
       remote: # We want to launch remote processes
         - # First remote process
-          instances_count: 1  # We want to run 2 instances of the command on each host
+          instances_count: 1  # We want to run 1 instance of the command on each host
           hosts: # The list of hosts
             - server-host-1
             - server-host-2
             - server-host-3
+  queue_groups: # The list of feeder/consumers groups 
+    Thrird Group: # The name of the group
+      command: app:test-queue-command # The feeder/consumers command to be executed using bin/console
+      local_feeder: # We want to run a local feeder process
+        bind_to: 192.168.0.254 # The feeder should bind to this IP
+        port: 9999 # The feeder should listen on this port (9999 is the default)
+      #remote_feeder: # We want to run a remote feeder process
+      #  bind_to: 192.168.0.254 # The feeder should bind to this IP
+      #  port: 9999 # The feeder should listen on this port (9999 is the default)
+      #  hosts:
+      #    - server-host-1 #There can only be one host for a remote feeder
+      consumers: # The list of consumers
+        local:
+          instances_count: 1  # We want to run 1 consumer instance of the command
+          host: 192.168.0.254 # The IP address of the feeder
+        remote: # We want to launch remote processes
+          - # First remote process
+            instances_count: 2  # We want to run 2 instances of the consumer command on each host
+            host: 192.168.0.254 # The IP address of the feeder
+            hosts: # The list of hosts
+              - server-host-1
+              - server-host-2
 ```
 
-The above code creates two groups.
+The above code creates three groups.
 
 One group is called "First Group" and it will run "bin/console app:test-command":
 - 2 instances on the local machine,
@@ -100,13 +128,20 @@ One group is called "First Group" and it will run "bin/console app:test-command"
 
 A total of 8 instances of "bin/console test-command" will run.
 
-The other group is called "Second Group" and it will run "bin/console app:test-command-2":
+The second group is called "Second Group" and it will run "bin/console app:test-command-2":
 - 1 instance on the local machine,
 - 1 instance on the "server-host-1" machine,
 - 1 instance on the "server-host-2" machine,
 - 1 instance on the "server-host-3" machine.
 
 A total of 4 instances of "bin/console test-command-2" will run.
+
+The third group is called "Third Group" and it will run "bin/console app:test-queue-command", which is a feeder/consumers model:
+- 1 feeder instance on the local machine, listening on 192.168.0.254:9999,
+- 2 consumer instances on the "server-host-1" machine, connecting to the feeder on 192.168.0.254:9999,
+- 2 consumer instances on the "server-host-2" machine, connecting to the feeder on 192.168.0.254:9999.
+
+A total of 5 instances of "bin/console test-queue-command" will run.
 
 Usually your configuration is the same between your master machine and your slave machines. Meaning:
 - the path to Symfony is the same,
@@ -151,6 +186,28 @@ distributed_architecture:
             - server-host-1
             - server-host-2
             - server-host-3
+  queue_groups: # The list of feeder/consumers groups 
+    Thrird Group: # The name of the group
+      command: app:test-queue-command # The feeder/consumers command to be executed using bin/console
+      local_feeder: # We want to run a local feeder process
+        bind_to: 192.168.0.254 # The feeder should bind to this IP
+        port: 9999 # The feeder should listen on this port (9999 is the default)
+      #remote_feeder: # We want to run a remote feeder process
+      #  bind_to: 192.168.0.254 # The feeder should bind to this IP
+      #  port: 9999 # The feeder should listen on this port (9999 is the default)
+      #  hosts:
+      #    - server-host-1 #There can only be one host for a remote feeder
+      consumers: # The list of consumers
+        local:
+          instances_count: 1  # We want to run 1 consumer instance of the command
+          host: 192.168.0.254 # The IP address of the feeder
+        remote: # We want to launch remote processes
+          - # First remote process
+            instances_count: 2  # We want to run 2 instances of the consumer command on each host
+            host: 192.168.0.254 # The IP address of the feeder
+            hosts: # The list of hosts
+              - server-host-1
+              - server-host-2
 ```
 
 ### Slave command
@@ -182,6 +239,11 @@ class TestCommand extends AbstractSlaveCommand
     // This method must be implemented
     protected function runSlave(?Handler $handler, ?LoggerInterface $logger): void
     {
+        if(!$handler) {
+          echo "Not executed in distributed-architecture\n";
+          die(1);
+        }
+
         $groupConfig = $handler->getGroupConfig();
 
         $params = $groupConfig->getParams();
@@ -199,6 +261,60 @@ class TestCommand extends AbstractSlaveCommand
     }
 }
 
+```
+
+### Feeder/Consumers slave command
+
+A feeder/consumers slave command must extend the "giudicelli\DistributedArchitectureBundle\Command\AbstractSlaveQueueCommand" class. 
+
+You may not pass it options, the only acceptable options are defined by "AbstractSlaveQueueCommand" and are passed by "distributed_architecture:run-master". If you need to pass it some parameters, please use the "params" entries in the group's configuration.
+
+Using the above example, here is a possible implementation for "app:test-queue-command".
+
+```php
+<?php
+
+namespace App\Command;
+
+use giudicelli\DistributedArchitectureBundle\Command\AbstractSlaveQueueCommand;
+use giudicelli\DistributedArchitectureBundle\HandlerQueue;
+use giudicelli\DistributedArchitectureQueue\Slave\Queue\Feeder\FeederInterface;
+use Psr\Log\LoggerInterface;
+
+class TestQueueCommand extends AbstractSlaveQueueCommand
+{
+    protected function configure()
+    {
+        parent::configure();
+        $this->setName('da:my-queue-command');
+        $this->setDescription('Launch the slave test queue command');
+    }
+
+    /**
+     * Return the instance of the FeederInterface, 
+     * this is called when this command is run as a feeder 
+     */
+    protected function getFeeder(): FeederInterface
+    {
+        // The feeder is application related, 
+        // it loads the items that need to be fed to the consumers
+        return new Feeder();
+    }
+
+    /**
+     * Handle an item sent by the feeder, 
+     * this is called when this command is run as a consumer 
+     */
+    protected function handleItem(HandlerQueue $handler, array $item, LoggerInterface $logger): void
+    {
+        // Anything echoed here will be considered log level "info" by the master process.
+        // If you want another level for certain messages, use $logger.
+        // echo "Hello world!\n" is the same as $logger->info('Hello world!')
+
+        // The content of $item is application related
+        ...
+    }
+}
 ```
 
  ### Processes state

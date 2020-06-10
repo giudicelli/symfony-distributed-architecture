@@ -7,7 +7,6 @@ namespace giudicelli\DistributedArchitectureBundle\Tests;
 use giudicelli\DistributedArchitectureBundle\Command\MasterCommand;
 use giudicelli\DistributedArchitectureBundle\DependencyInjection\DistributedArchitectureExtension;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -267,10 +266,10 @@ final class CommandTest extends TestCase
 
         $expected = [
             'debug - [test] [127.0.0.1] Connected to host',
-            'debug - [test] [127.0.0.1] Connected to host',
-            'error - [master] Timeout waiting for content, force kill',
+            'error - [test] [127.0.0.1] [master] Timeout waiting for content, force kill',
             'info - [test] [127.0.0.1] [da:my-command/1/1] Child 1 1',
             'notice - [test] [127.0.0.1] Ended',
+            'notice - [test] [127.0.0.1] [da:my-command/1/1] Ended',
         ];
         $this->assertEquals($expected, $output);
     }
@@ -289,11 +288,11 @@ final class CommandTest extends TestCase
         $expected = [
             'debug - [test] [127.0.0.1] Connected to host',
             'debug - [test] [127.0.0.1] Connected to host',
-            'debug - [test] [127.0.0.1] Connected to host',
-            'error - [master] Timeout waiting for clean shutdown, force kill',
+            'error - [test] [127.0.0.1] [master] Timeout waiting for clean shutdown, force kill',
             'info - [test] [127.0.0.1] [da:my-command/1/1] Child 1 1',
             'notice - [master] Stopping...',
             'notice - [test] [127.0.0.1] Ended',
+            'notice - [test] [127.0.0.1] [da:my-command/1/1] Ended',
             'notice - [test] [127.0.0.1] [master] Received SIGTERM, stopping',
             'notice - [test] [127.0.0.1] [master] Stopping...',
         ];
@@ -373,28 +372,5 @@ distributed_architecture:
 ';
 
         return $this->buildContainer($config);
-    }
-}
-
-class Logger extends AbstractLogger
-{
-    private $output = [];
-
-    public function reset()
-    {
-        $this->output = [];
-    }
-
-    public function log($level, $message, array $context = [])
-    {
-        foreach ($context as $key => $value) {
-            $message = str_replace('{'.$key.'}', $value, $message);
-        }
-        $this->output[] = "{$level} - {$message}";
-    }
-
-    public function getOutput(): array
-    {
-        return $this->output;
     }
 }
