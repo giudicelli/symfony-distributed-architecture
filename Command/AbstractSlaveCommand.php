@@ -2,6 +2,7 @@
 
 namespace giudicelli\DistributedArchitectureBundle\Command;
 
+use giudicelli\DistributedArchitecture\Helper\InterProcessLogger;
 use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
 use giudicelli\DistributedArchitectureBundle\Handler;
 use Psr\Log\LoggerInterface;
@@ -29,15 +30,22 @@ abstract class AbstractSlaveCommand extends Command
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        if ($input->getOption('gda-params')) {
-            $handler = new Handler($input->getOption('gda-params'), $this->eventsHandler);
+        try {
+            if ($input->getOption('gda-params')) {
+                $handler = new Handler($input->getOption('gda-params'), $this->eventsHandler);
 
-            $me = $this;
-            $handler->run(function (Handler $handler, LoggerInterface $logger) use ($me) {
-                $me->runSlave($handler, $logger);
-            });
-        } else {
-            $this->runSlave(null, null);
+                $me = $this;
+                $handler->run(function (Handler $handler, LoggerInterface $logger) use ($me) {
+                    $me->runSlave($handler, $logger);
+                });
+            } else {
+                $this->runSlave(null, null);
+            }
+        } catch (\Exception $e) {
+            $logger = new InterProcessLogger(false);
+            $logger->critical($e->getMessage());
+
+            return 1;
         }
 
         return 0;

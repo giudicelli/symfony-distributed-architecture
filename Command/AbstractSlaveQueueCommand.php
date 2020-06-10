@@ -2,10 +2,10 @@
 
 namespace giudicelli\DistributedArchitectureBundle\Command;
 
+use giudicelli\DistributedArchitecture\Helper\InterProcessLogger;
 use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
 use giudicelli\DistributedArchitectureBundle\HandlerQueue;
 use giudicelli\DistributedArchitectureQueue\Slave\Queue\Feeder\FeederInterface;
-use giudicelli\DistributedArchitectureQueue\tests\Feeder;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -31,19 +31,19 @@ abstract class AbstractSlaveQueueCommand extends Command
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        if (!$input->getOption('gda-params')) {
-            $output->writeln('Empty gda-params');
+        try {
+            $handler = new HandlerQueue($input->getOption('gda-params'), $this->eventsHandler);
+
+            $me = $this;
+            $handler->runQueue(function (HandlerQueue $handler, array $item, LoggerInterface $logger) use ($me) {
+                $me->handleItem($handler, $item, $logger);
+            }, $this->getFeeder());
+        } catch (\Exception $e) {
+            $logger = new InterProcessLogger(false);
+            $logger->critical($e->getMessage());
 
             return 1;
         }
-
-        $handler = new HandlerQueue($input->getOption('gda-params'), $this->eventsHandler);
-
-        $me = $this;
-        $handler->runQueue(function (HandlerQueue $handler, array $item, LoggerInterface $logger) use ($me) {
-            $me->handleItem($handler, $item, $logger);
-        }, $this->getFeeder());
-
         return 0;
     }
 
@@ -54,14 +54,14 @@ abstract class AbstractSlaveQueueCommand extends Command
     }
 
     /**
-     * This method need to be implemented, it returns the instance of the feeder.
+     * This method needs to be implemented, it returns the instance of the feeder.
      *
      * @return FeederInterface the feeder instance
      */
     abstract protected function getFeeder(): FeederInterface;
 
     /**
-     * This method need to be implemented, its purpose is to handle each item passed by the feeder.
+     * This method needs to be implemented, its purpose is to handle each item passed by the feeder.
      *
      * @param HandlerQueue    $handler the instance of the handler
      * @param array           $item    the item to handle
