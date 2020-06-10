@@ -109,6 +109,10 @@ class MasterCommand extends Command
             $config = array_merge($config, $this->parseQueueConfig($groupConfigs));
         }
 
+        if (!$config) {
+            return 0;
+        }
+
         $saveStates = $this->getContainer()->getParameter('distributed_architecture.save_states');
         if ($saveStates
             && $this->processStatusRepository
@@ -227,7 +231,6 @@ class MasterCommand extends Command
 
                 $envs = [
                     'RUN_AS_SERVICE' => 1,
-                    'LANG' => 'en_US.UTF-8',
                 ];
 
                 pcntl_exec(PHP_BINARY, $args, $envs);
