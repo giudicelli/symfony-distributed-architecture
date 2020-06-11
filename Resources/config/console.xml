@@ -12,5 +12,8 @@
 
         <service id="distributed_architecture.command.slave" class="giudicelli\DistributedArchitectureBundle\Command\AbstractSlaveCommand" abstract="true">
         </service>
+
+        <service id="distributed_architecture.command.slave_queue" class="giudicelli\DistributedArchitectureBundle\Command\AbstractSlaveQueueCommand" abstract="true">
+        </service>
     </services>
 </container>

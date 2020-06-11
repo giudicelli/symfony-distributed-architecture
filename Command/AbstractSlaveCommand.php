@@ -58,7 +58,7 @@ abstract class AbstractSlaveCommand extends Command
     }
 
     /**
-     * This method need to be implemented, its purpose it the do the actual task the command is supposed to handle.
+     * This method needs to be implemented, its purpose it the do the actual task the command is supposed to handle.
      *
      * @param null|Handler         $handler null when the command wasn't started by the master, else an instance of the handler
      * @param null|LoggerInterface $logger  null when the command wasn't started by the master, else a LoggerInterface to allow logs to be properly passed back to the master command
