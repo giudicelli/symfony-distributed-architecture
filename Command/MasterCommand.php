@@ -14,8 +14,6 @@ use giudicelli\DistributedArchitectureBundle\Handler\Remote\Consumer\Config as R
 use giudicelli\DistributedArchitectureBundle\Handler\Remote\Feeder\Config as RemoteFeederConfig;
 use giudicelli\DistributedArchitectureBundle\Launcher;
 use giudicelli\DistributedArchitectureBundle\Logger\ServiceLogger;
-use giudicelli\DistributedArchitectureBundle\Repository\MasterCommandRepository;
-use giudicelli\DistributedArchitectureBundle\Repository\ProcessStatusRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -41,19 +39,11 @@ class MasterCommand extends Command
     /** @var LoggerInterface */
     private $logger;
 
-    /** @var ProcessStatusRepository */
-    private $processStatusRepository;
-
-    /** @var MasterCommandRepository */
-    private $masterCommandRepository;
-
     /** @var EventsHandler */
     private $eventsHandler;
 
-    public function __construct(?ProcessStatusRepository $processStatusRepository = null, ?MasterCommandRepository $masterCommandRepository = null, ?EventsHandler $eventsHandler = null)
+    public function __construct(?EventsHandler $eventsHandler = null)
     {
-        $this->processStatusRepository = $processStatusRepository;
-        $this->masterCommandRepository = $masterCommandRepository;
         $this->eventsHandler = $eventsHandler;
 
         parent::__construct();
@@ -128,22 +118,7 @@ class MasterCommand extends Command
             return 0;
         }
 
-        $saveStates = $this->getContainer()->getParameter('distributed_architecture.save_states');
-        if ($saveStates
-            && $this->processStatusRepository
-            && $this->masterCommandRepository) {
-            // Clear previous states
-            $this->processStatusRepository->deleteAll();
-            $this->masterCommandRepository->deleteAll();
-
-            if ($this->eventsHandler) {
-                $events = $this->eventsHandler;
-            }
-        } else {
-            $events = null;
-        }
-
-        $launcher->run($config, $events, $runAsService);
+        $launcher->run($config, $this->eventsHandler, $runAsService);
 
         if ($input->getOption('pid')) {
             @unlink($input->getOption('pid'));

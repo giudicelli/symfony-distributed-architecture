@@ -6,13 +6,6 @@
 
     <services>
         <defaults autowire="true" autoconfigure="true"/>
-
-        <service id="giudicelli\DistributedArchitectureBundle\Repository\ProcessStatusRepository" class="giudicelli\DistributedArchitectureBundle\Repository\ProcessStatusRepository" public="true">
-        </service>
-
-        <service id="giudicelli\DistributedArchitectureBundle\Repository\MasterCommandRepository" class="giudicelli\DistributedArchitectureBundle\Repository\MasterCommandRepository" public="true">
-        </service>
-
         <service id="giudicelli\DistributedArchitectureBundle\Event\EventsHandler" class="giudicelli\DistributedArchitectureBundle\Event\EventsHandler" public="true">
         </service>
     </services>

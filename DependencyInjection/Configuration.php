@@ -28,11 +28,6 @@ class Configuration implements ConfigurationInterface
         $rootNode = $rootNode
             ->children()
         ;
-        $rootNode
-            ->booleanNode('save_states')
-            ->defaultTrue()
-            ->info('Should the state of each process be saved in the entity ProcessState.')
-        ;
         $groupsNode = $rootNode
             ->arrayNode('groups')
             ->info('The list of processes groups.')
