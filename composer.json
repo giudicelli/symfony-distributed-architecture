@@ -14,6 +14,7 @@
         "php": ">=7.2.5",
         "ext-eio": "*",
         "psr/log": "~1.0",
+        "giudicelli/distributed-architecture": ">=0.5.1",
         "giudicelli/distributed-architecture-queue": ">=0.4.0",
         "symfony/console": "^5",
         "symfony/config": "^5",
