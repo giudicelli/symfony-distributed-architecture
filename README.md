@@ -11,14 +11,6 @@ If you want to use an interface to control you distributed architecture, you can
 $ composer require giudicelli/symfony-distributed-architecture
 ```
 
-If you're planning on using the processes' state feature, you will need to make sure the tables are created or updated.
-After installing symfony-distributed-architecture, or updating it, please make run to run the following commands.
-
-```bash
-$ bin/console make:migration
-$ bin/console doctrine:migrations:migrate
-```
-
 ## Using
 
 To run your distributed architecture you will mainly need to use one command "bin/console distributed_architecture:run-master". It will parse the configuration and launch all processes.
@@ -47,7 +39,6 @@ Here is a complete example of a configuration.
 
 ```yaml
 distributed_architecture:
-  save_states: true # Save each process' state in the ProcessStatus entity, default is true
   groups:
     First Group: # The name of the group
       command: app:test-command # The command to be executed using bin/console
@@ -153,7 +144,6 @@ When all those are true, your configuration can be very minimal.
 
 ```yaml
 distributed_architecture:
-  save_states: true # Save each process' state in the ProcessStatus entity, default is true
   groups:
     First Group: # The name of the group
       command: app:test-command # The command to be executed using bin/console
@@ -316,14 +306,20 @@ class TestQueueCommand extends AbstractSlaveQueueCommand
     }
 }
 ```
+## Events
 
- ### Processes state
+This bundle dispatches a few events:
 
-When "save_states" is set to true, each slave process' state will be stored in an entity called ProcessStatus.
+- **distributed_architecture.master_starting** with a **MasterStartingEvent** object, is dispatched everytime a **LauncherInterface** is starting. It can be either on the master server or on a remote server, use MasterStartingEvent::getLauncher()::isMaster() to know if you're on the master server or on a remote.
+- **distributed_architecture.master_started** with a **MasterStartedEvent** object, is dispatched everytime a **LauncherInterface** is started. It can be either on the master server or on a remote server, use MasterStartedEvent::getLauncher()::isMaster() to know if you're on the master server or on a remote.
+- **distributed_architecture.master_running** with a **MasterRunningEvent** object, is dispatched on a regular basis.  It can be either on the master server or on a remote server, use MasterRunningEvent::getLauncher()::isMaster() to know if you're on the master server or on a remote.
+- **distributed_architecture.master_stopped** with a **MasterStoppedEvent** object, is dispatched when a **LauncherInterface** exits.  It can be either on the master server or on a remote server, use MasterStoppedEvent::getLauncher()::isMaster() to know if you're on the master server or on a remote.
+- **distributed_architecture.process_started** with a **ProcessStartedEvent** object, is dispatched everytime a **ProcessInterface** is started.
+- **distributed_architecture.process_running** with a **ProcessRunningEvent** object, is dispatched everytime the **ProcessInterface** sends data.
+- **distributed_architecture.process_stopped** with a **ProcessStoppedEvent** object, is dispatched when a **ProcessInterface** exits.
+- **distributed_architecture.process_timedout** with a **ProcessTimedOutEvent** object, is dispatched when a **ProcessInterface** has not sent any data in a certain time.
 
-If you're planning on using [symfony-distributed-architecture-admin](https://github.com/giudicelli/symfony-distributed-architecture-admin), you need to activate this option.
 
- ```yaml
-distributed_architecture:
-  save_states: true # Save each process' state in the ProcessStatus entity, default is true
-```
+
+
+
