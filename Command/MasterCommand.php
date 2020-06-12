@@ -2,9 +2,9 @@
 
 namespace giudicelli\DistributedArchitectureBundle\Command;
 
-use giudicelli\DistributedArchitecture\Master\GroupConfigInterface;
-use giudicelli\DistributedArchitecture\Master\Handlers\GroupConfig;
-use giudicelli\DistributedArchitecture\Master\ProcessConfigInterface;
+use giudicelli\DistributedArchitecture\Config\GroupConfig;
+use giudicelli\DistributedArchitecture\Config\GroupConfigInterface;
+use giudicelli\DistributedArchitecture\Config\ProcessConfigInterface;
 use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
 use giudicelli\DistributedArchitectureBundle\Handler\Local\Config as LocalConfig;
 use giudicelli\DistributedArchitectureBundle\Handler\Local\Consumer\Config as LocalConsumerConfig;
@@ -118,7 +118,11 @@ class MasterCommand extends Command
             return 0;
         }
 
-        $launcher->run($config, $this->eventsHandler, $runAsService);
+        $launcher
+            ->setGroupConfigs($config)
+            ->setEventsHandler($this->eventsHandler)
+            ->runMaster($runAsService)
+        ;
 
         if ($input->getOption('pid')) {
             @unlink($input->getOption('pid'));

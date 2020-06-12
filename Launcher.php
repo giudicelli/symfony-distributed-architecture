@@ -2,7 +2,7 @@
 
 namespace giudicelli\DistributedArchitectureBundle;
 
-use giudicelli\DistributedArchitecture\Master\GroupConfigInterface;
+use giudicelli\DistributedArchitecture\Config\GroupConfigInterface;
 use giudicelli\DistributedArchitecture\Master\Launcher as _Launcher;
 use giudicelli\DistributedArchitectureBundle\Handler\Local\Consumer\Process as LocalConsumerProcess;
 use giudicelli\DistributedArchitectureBundle\Handler\Local\Feeder\Process as LocalFeederProcess;
