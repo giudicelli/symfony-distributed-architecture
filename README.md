@@ -314,6 +314,7 @@ This bundle dispatches a few events:
 - **distributed_architecture.master_started** with a **MasterStartedEvent** object, is dispatched everytime a **LauncherInterface** is started. It can be either on the master server or on a remote server, use MasterStartedEvent::getLauncher()::isMaster() to know if you're on the master server or on a remote.
 - **distributed_architecture.master_running** with a **MasterRunningEvent** object, is dispatched on a regular basis.  It can be either on the master server or on a remote server, use MasterRunningEvent::getLauncher()::isMaster() to know if you're on the master server or on a remote.
 - **distributed_architecture.master_stopped** with a **MasterStoppedEvent** object, is dispatched when a **LauncherInterface** exits.  It can be either on the master server or on a remote server, use MasterStoppedEvent::getLauncher()::isMaster() to know if you're on the master server or on a remote.
+- **distributed_architecture.process_created** with a **ProcessCreatedEvent** object, is dispatched everytime a **ProcessInterface** is created.
 - **distributed_architecture.process_started** with a **ProcessStartedEvent** object, is dispatched everytime a **ProcessInterface** is started.
 - **distributed_architecture.process_running** with a **ProcessRunningEvent** object, is dispatched everytime the **ProcessInterface** sends data.
 - **distributed_architecture.process_stopped** with a **ProcessStoppedEvent** object, is dispatched when a **ProcessInterface** exits.

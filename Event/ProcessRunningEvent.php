@@ -9,22 +9,16 @@ use giudicelli\DistributedArchitecture\Master\ProcessInterface;
  *
  * @author Frédéric Giudicelli
  */
-final class ProcessRunningEvent
+final class ProcessRunningEvent extends AbstractProcessEvent
 {
     const NAME = 'distributed_architecture.process_running';
 
-    private $process;
     private $line;
 
     public function __construct(ProcessInterface $process, string $line)
     {
-        $this->process = $process;
         $this->line = $line;
-    }
-
-    public function getProcess(): ProcessInterface
-    {
-        return $this->process;
+        parent::__construct($process);
     }
 
     public function getLine(): string

@@ -87,6 +87,18 @@ class EventsHandler implements EventsInterface
     /**
      * {@inheritdoc}
      */
+    public function processCreated(ProcessInterface $process): void
+    {
+        try {
+            $this->eventDispatcher->dispatch(new ProcessCreatedEvent($process), ProcessCreatedEvent::NAME);
+        } catch (\Exception $e) {
+            $process->getParent()->getLogger()->error($e->getMessage());
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function processStarted(ProcessInterface $process): void
     {
         try {
