@@ -50,10 +50,10 @@ final class QueueCommandTest extends TestCase
         sort($output);
 
         $expected = [
-            'debug - [test] [localhost] [Consumer - da:my-queue-command/2/2] Connected to /tmp/gdaq_117d4fd0db608747bc65ba337b9d0531c6836137.sock',
             'debug - [test] [localhost] [Feeder - da:my-queue-command/1/1] Available consumers: 1 / 1',
             'debug - [test] [localhost] [Feeder - da:my-queue-command/1/1] Available consumers: 1 / 1',
             'debug - [test] [localhost] [Feeder - da:my-queue-command/1/1] Available consumers: 1 / 1',
+            'info - [test] [localhost] [Consumer - da:my-queue-command/2/2] Connected to /tmp/gdaq_117d4fd0db608747bc65ba337b9d0531c6836137.sock',
             'info - [test] [localhost] [Consumer - da:my-queue-command/2/2] MyType:1',
             'info - [test] [localhost] [Consumer - da:my-queue-command/2/2] MyType:2',
             'info - [test] [localhost] [Consumer - da:my-queue-command/2/2] MyType:3',
@@ -81,10 +81,10 @@ final class QueueCommandTest extends TestCase
             'debug - [test] [127.0.0.2] Connected to host',
             'debug - [test] [127.0.0.2] Connected to host',
             'debug - [test] [127.0.0.2] Connected to host',
-            'debug - [test] [127.0.0.2] [Consumer - da:my-queue-command/2/2] Connected to /tmp/gdaq_117d4fd0db608747bc65ba337b9d0531c6836137.sock',
             'debug - [test] [127.0.0.2] [Feeder - da:my-queue-command/1/1] Available consumers: 1 / 1',
             'debug - [test] [127.0.0.2] [Feeder - da:my-queue-command/1/1] Available consumers: 1 / 1',
             'debug - [test] [127.0.0.2] [Feeder - da:my-queue-command/1/1] Available consumers: 1 / 1',
+            'info - [test] [127.0.0.2] [Consumer - da:my-queue-command/2/2] Connected to /tmp/gdaq_117d4fd0db608747bc65ba337b9d0531c6836137.sock',
             'info - [test] [127.0.0.2] [Consumer - da:my-queue-command/2/2] MyType:1',
             'info - [test] [127.0.0.2] [Consumer - da:my-queue-command/2/2] MyType:2',
             'info - [test] [127.0.0.2] [Consumer - da:my-queue-command/2/2] MyType:3',
