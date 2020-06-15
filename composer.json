@@ -35,6 +35,7 @@
         "psr-4": { "giudicelli\\DistributedArchitectureBundle\\": "./" },
         "exclude-from-classmap": [
             "/Tests/",
+            "/Examples/",
             "/bin/"
         ]
     },
