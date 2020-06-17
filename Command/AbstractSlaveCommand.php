@@ -42,7 +42,7 @@ abstract class AbstractSlaveCommand extends Command
                 $this->runSlave(null);
             }
         } catch (\Exception $e) {
-            InterProcessLogger::sendLog('critcal', $e->getMessage());
+            InterProcessLogger::sendLog('critical', $e->getMessage());
 
             return 1;
         }

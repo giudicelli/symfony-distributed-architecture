@@ -39,7 +39,7 @@ abstract class AbstractSlaveQueueCommand extends Command
                 $me->handleItem($handler, $item);
             }, $this->getFeeder());
         } catch (\Exception $e) {
-            InterProcessLogger::sendLog('critcal', $e->getMessage());
+            InterProcessLogger::sendLog('critical', $e->getMessage());
 
             return 1;
         }
