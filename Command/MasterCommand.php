@@ -62,9 +62,9 @@ class MasterCommand extends Command
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         if ($this->logger) {
-            $logger = $this->logger;
+            $logger = new ServiceLogger($this->logger);
         } else {
-            $logger = new ConsoleLogger($output);
+            $logger = new ServiceLogger(new ConsoleLogger($output));
         }
 
         // Will fork a detached service
@@ -73,10 +73,6 @@ class MasterCommand extends Command
         }
 
         $runAsService = !empty(getenv('RUN_AS_SERVICE'));
-        if ($runAsService) {
-            // We want our logger to record the datetime
-            $logger = new ServiceLogger($logger);
-        }
 
         $launcher = new Launcher(true, $logger);
         if ($input->getOption('timeout')) {
