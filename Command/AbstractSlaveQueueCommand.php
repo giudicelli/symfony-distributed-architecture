@@ -3,10 +3,10 @@
 namespace giudicelli\DistributedArchitectureBundle\Command;
 
 use giudicelli\DistributedArchitecture\Helper\InterProcessLogger;
+use giudicelli\DistributedArchitecture\Slave\HandlerInterface;
 use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
 use giudicelli\DistributedArchitectureBundle\HandlerQueue;
 use giudicelli\DistributedArchitectureQueue\Slave\Queue\Feeder\FeederInterface;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -35,15 +35,15 @@ abstract class AbstractSlaveQueueCommand extends Command
             $handler = new HandlerQueue($input->getOption('gda-params'), $this->eventsHandler);
 
             $me = $this;
-            $handler->runQueue(function (HandlerQueue $handler, array $item, LoggerInterface $logger) use ($me) {
-                $me->handleItem($handler, $item, $logger);
+            $handler->runQueue(function (HandlerInterface $handler, array $item) use ($me) {
+                $me->handleItem($handler, $item);
             }, $this->getFeeder());
         } catch (\Exception $e) {
-            $logger = new InterProcessLogger(false);
-            $logger->critical($e->getMessage());
+            InterProcessLogger::sendLog('critcal', $e->getMessage());
 
             return 1;
         }
+
         return 0;
     }
 
@@ -63,9 +63,8 @@ abstract class AbstractSlaveQueueCommand extends Command
     /**
      * This method needs to be implemented, its purpose is to handle each item passed by the feeder.
      *
-     * @param HandlerQueue    $handler the instance of the handler
-     * @param array           $item    the item to handle
-     * @param LoggerInterface $logger  a LoggerInterface to allow logs to be properly passed back to the master command
+     * @param HandlerInterface $handler the instance of the handler
+     * @param array            $item    the item to handle
      */
-    abstract protected function handleItem(HandlerQueue $handler, array $item, LoggerInterface $logger): void;
+    abstract protected function handleItem(HandlerInterface $handler, array $item): void;
 }

@@ -5,8 +5,14 @@
     xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
-        <defaults autowire="true" autoconfigure="true"/>
-        <service id="giudicelli\DistributedArchitectureBundle\Event\EventsHandler" class="giudicelli\DistributedArchitectureBundle\Event\EventsHandler" public="true">
+        <defaults autowire="true" autoconfigure="true" public="false" />
+
+        <service id="giudicelli\DistributedArchitectureBundle\Event\EventsHandler" class="giudicelli\DistributedArchitectureBundle\Event\EventsHandler">
         </service>
+        <service id="distributed_architecture.events_handler" alias="giudicelli\DistributedArchitectureBundle\Event\EventsHandler"/>
+
+        <service id="giudicelli\DistributedArchitecture\Helper\InterProcessLogger" class="giudicelli\DistributedArchitecture\Helper\InterProcessLogger">
+        </service>
+        <service id="distributed_architecture.slave_logger" alias="giudicelli\DistributedArchitecture\Helper\InterProcessLogger"/>
     </services>
 </container>

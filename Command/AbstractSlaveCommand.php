@@ -3,9 +3,9 @@
 namespace giudicelli\DistributedArchitectureBundle\Command;
 
 use giudicelli\DistributedArchitecture\Helper\InterProcessLogger;
+use giudicelli\DistributedArchitecture\Slave\HandlerInterface;
 use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
 use giudicelli\DistributedArchitectureBundle\Handler;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -35,15 +35,14 @@ abstract class AbstractSlaveCommand extends Command
                 $handler = new Handler($input->getOption('gda-params'), $this->eventsHandler);
 
                 $me = $this;
-                $handler->run(function (Handler $handler, LoggerInterface $logger) use ($me) {
-                    $me->runSlave($handler, $logger);
+                $handler->run(function (HandlerInterface $handler) use ($me) {
+                    $me->runSlave($handler);
                 });
             } else {
-                $this->runSlave(null, null);
+                $this->runSlave(null);
             }
         } catch (\Exception $e) {
-            $logger = new InterProcessLogger(false);
-            $logger->critical($e->getMessage());
+            InterProcessLogger::sendLog('critcal', $e->getMessage());
 
             return 1;
         }
@@ -60,8 +59,7 @@ abstract class AbstractSlaveCommand extends Command
     /**
      * This method needs to be implemented, its purpose it the do the actual task the command is supposed to handle.
      *
-     * @param null|Handler         $handler null when the command wasn't started by the master, else an instance of the handler
-     * @param null|LoggerInterface $logger  null when the command wasn't started by the master, else a LoggerInterface to allow logs to be properly passed back to the master command
+     * @param null|HandlerInterface $handler null when the command wasn't started by the master, else an instance of the handler
      */
-    abstract protected function runSlave(?Handler $handler, ?LoggerInterface $logger): void;
+    abstract protected function runSlave(?HandlerInterface $handler): void;
 }

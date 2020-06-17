@@ -2,10 +2,9 @@
 
 namespace giudicelli\DistributedArchitectureBundle\Tests;
 
+use giudicelli\DistributedArchitecture\Slave\HandlerInterface;
 use giudicelli\DistributedArchitectureBundle\Command\AbstractSlaveQueueCommand;
-use giudicelli\DistributedArchitectureBundle\HandlerQueue;
 use giudicelli\DistributedArchitectureQueue\Slave\Queue\Feeder\FeederInterface;
-use Psr\Log\LoggerInterface;
 
 /**
  * @author Frédéric Giudicelli
@@ -24,7 +23,7 @@ class MyQueueCommand extends AbstractSlaveQueueCommand
         return new Feeder();
     }
 
-    protected function handleItem(HandlerQueue $handler, array $item, LoggerInterface $logger): void
+    protected function handleItem(HandlerInterface $handler, array $item): void
     {
         echo $item['type'].':'.$item['id']."\n";
     }

@@ -215,7 +215,7 @@ namespace App\Command;
 
 use giudicelli\DistributedArchitectureBundle\Command\AbstractSlaveCommand;
 use giudicelli\DistributedArchitectureBundle\Handler;
-use Psr\Log\LoggerInterface;
+use giudicelli\DistributedArchitecture\Slave\HandlerInterface;
 
 class TestCommand extends AbstractSlaveCommand
 {
@@ -227,7 +227,7 @@ class TestCommand extends AbstractSlaveCommand
     }
 
     // This method must be implemented
-    protected function runSlave(?Handler $handler, ?LoggerInterface $logger): void
+    protected function runSlave(?HandlerInterface $handler): void
     {
         if(!$handler) {
           echo "Not executed in distributed-architecture\n";
@@ -243,8 +243,8 @@ class TestCommand extends AbstractSlaveCommand
         while($handler->sleep(1)) {
 
             // Anything echoed here will be considered log level "info" by the master process.
-            // If you want another level for certain messages, use $logger.
-            // echo "Hello world!\n" is the same as $logger->info('Hello world!')
+            // If you want another level for certain messages, use $handler->getLogger().
+            // echo "Hello world!\n" is the same as $handler->getLogger()->info('Hello world!')
 
             echo $params['Param1']." ".$params['Param2']."\n";
         }
@@ -266,10 +266,9 @@ Using the above example, here is a possible implementation for "app:test-queue-c
 
 namespace App\Command;
 
+use giudicelli\DistributedArchitecture\Slave\HandlerInterface;
 use giudicelli\DistributedArchitectureBundle\Command\AbstractSlaveQueueCommand;
-use giudicelli\DistributedArchitectureBundle\HandlerQueue;
 use giudicelli\DistributedArchitectureQueue\Slave\Queue\Feeder\FeederInterface;
-use Psr\Log\LoggerInterface;
 
 class TestQueueCommand extends AbstractSlaveQueueCommand
 {
@@ -295,11 +294,11 @@ class TestQueueCommand extends AbstractSlaveQueueCommand
      * Handle an item sent by the feeder, 
      * this is called when this command is run as a consumer 
      */
-    protected function handleItem(HandlerQueue $handler, array $item, LoggerInterface $logger): void
+    protected function handleItem(HandlerQueue $handler, array $item): void
     {
         // Anything echoed here will be considered log level "info" by the master process.
-        // If you want another level for certain messages, use $logger.
-        // echo "Hello world!\n" is the same as $logger->info('Hello world!')
+        // If you want another level for certain messages, use $handler->getLogger().
+        // echo "Hello world!\n" is the same as $handler->getLogger()->info('Hello world!')
 
         // The content of $item is application related
         ...
