@@ -18,6 +18,8 @@ class Logger extends AbstractLogger
         foreach ($context as $key => $value) {
             $message = str_replace('{'.$key.'}', $value, $message);
         }
+        // Remove prefix date
+        $message = preg_replace('/^\[[0-9]{4}-[^\]]+\] /', '', $message);
         $this->output[] = "{$level} - {$message}";
     }
 
