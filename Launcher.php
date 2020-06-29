@@ -10,6 +10,8 @@ use giudicelli\DistributedArchitectureBundle\Handler\Local\Process as LocalProce
 use giudicelli\DistributedArchitectureBundle\Handler\Remote\Consumer\Process as RemoteConsumerProcess;
 use giudicelli\DistributedArchitectureBundle\Handler\Remote\Feeder\Process as RemoteFeederProcess;
 use giudicelli\DistributedArchitectureBundle\Handler\Remote\Process as RemoteProcess;
+use giudicelli\DistributedArchitectureQueue\Master\Handlers\Consumer\ConfigInterface as ConsumerConfigInterface;
+use giudicelli\DistributedArchitectureQueue\Master\Handlers\Feeder\ConfigInterface as FeederConfigInterface;
 use giudicelli\DistributedArchitectureQueue\Master\LauncherQueue;
 
 /**
@@ -52,10 +54,8 @@ class Launcher extends LauncherQueue
     protected function isQueueGroup(GroupConfigInterface $groupConfig): bool
     {
         foreach ($groupConfig->getProcessConfigs() as $processConfig) {
-            if (in_array(FeederConfigInterface::class, class_implements($processConfig))) {
-                return true;
-            }
-            if (in_array(ConsumerConfigInterface::class, class_implements($processConfig))) {
+            if ($processConfig instanceof FeederConfigInterface
+                || $processConfig instanceof ConsumerConfigInterface) {
                 return true;
             }
         }
