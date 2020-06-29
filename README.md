@@ -305,6 +305,28 @@ class TestQueueCommand extends AbstractSlaveQueueCommand
     }
 }
 ```
+
+### Pre run checks
+If your slave command needs to run some checks before being actually run by the master it needs to implement the following method:
+```php
+<?php
+
+class TestQueueCommand extends AbstractSlaveQueueCommand
+{
+    [...]
+
+    public function preRunCheck(GroupConfigInterface $groupConfig, LoggerInterface $logger): bool
+    {
+        if($this->someCheck()) {
+          return true; // Everything is ok, proceed.
+        }
+        return false; // Not ok, master will not run this group config.
+    }
+
+    [...]
+}
+```
+
 ## Events
 
 This bundle dispatches a few events:

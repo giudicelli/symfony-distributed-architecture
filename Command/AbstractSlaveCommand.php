@@ -2,10 +2,12 @@
 
 namespace giudicelli\DistributedArchitectureBundle\Command;
 
+use giudicelli\DistributedArchitecture\Config\GroupConfigInterface;
 use giudicelli\DistributedArchitecture\Helper\InterProcessLogger;
 use giudicelli\DistributedArchitecture\Slave\HandlerInterface;
 use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
 use giudicelli\DistributedArchitectureBundle\Handler;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -48,6 +50,18 @@ abstract class AbstractSlaveCommand extends Command
         }
 
         return 0;
+    }
+
+    /**
+     * Commands can implement this method to have the master perform a pre run check.
+     *
+     * @param GroupConfigInterface $groupConfig the group config associated with this command
+     * @param LoggerInterface $logger the logger
+     * @return bool true if the command is valid else false
+     */
+    public function preRunCheck(GroupConfigInterface $groupConfig, LoggerInterface $logger): bool
+    {
+        return true;
     }
 
     protected function configure()

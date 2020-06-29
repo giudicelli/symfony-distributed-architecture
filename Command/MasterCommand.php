@@ -62,19 +62,36 @@ class MasterCommand extends Command
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         if ($this->logger) {
-            $logger = new ServiceLogger($this->logger);
+            $this->logger = new ServiceLogger($this->logger);
         } else {
-            $logger = new ServiceLogger(new ConsoleLogger($output));
+            $this->logger = new ServiceLogger(new ConsoleLogger($output));
+        }
+
+        // Parse the config
+        $groupConfigs = $this->buildGroupConfigs();
+        if (!$groupConfigs) {
+            return 0;
         }
 
         // Will fork a detached service
         if ($input->getOption('service')) {
-            return $this->startAsService($input, $logger);
+            $groupConfigs = $this->checkGroupConfigs($groupConfigs);
+            if (!$groupConfigs) {
+                return 0;
+            }
+
+            return $this->startAsService($input);
         }
 
         $runAsService = !empty(getenv('RUN_AS_SERVICE'));
+        if (!$runAsService) {
+            $groupConfigs = $this->checkGroupConfigs($groupConfigs);
+            if (!$groupConfigs) {
+                return 0;
+            }
+        }
 
-        $launcher = new Launcher(true, $logger);
+        $launcher = new Launcher(true, $this->logger);
         if ($input->getOption('timeout')) {
             $launcher->setTimeout($input->getOption('timeout'));
         }
@@ -85,37 +102,8 @@ class MasterCommand extends Command
             $launcher->setMaxRunningTime($input->getOption('max-running-time'));
         }
 
-        /** @var array<GroupConfigInterface> */
-        $config = [];
-        $groupConfigs = $this->getContainer()->getParameter('distributed_architecture.groups');
-        if ($groupConfigs) {
-            $config = $this->parseConfig($groupConfigs);
-        }
-
-        $groupConfigs = $this->getContainer()->getParameter('distributed_architecture.queue_groups');
-        if ($groupConfigs) {
-            $queueConfig = $this->parseQueueConfig($groupConfigs);
-            // Make sure group names are unique
-            if ($config) {
-                foreach ($queueConfig as $queueGroupConfig) {
-                    foreach ($config as $groupConfig) {
-                        if ($queueGroupConfig->getName() === $groupConfig->getName()) {
-                            $logger->critical('Duplicate group name for '.$queueGroupConfig->getName());
-
-                            return 1;
-                        }
-                    }
-                }
-            }
-            $config = array_merge($config, $queueConfig);
-        }
-
-        if (!$config) {
-            return 0;
-        }
-
         $launcher
-            ->setGroupConfigs($config)
+            ->setGroupConfigs($groupConfigs)
             ->setEventsHandler($this->eventsHandler)
             ->runMaster($runAsService)
         ;
@@ -137,7 +125,14 @@ class MasterCommand extends Command
         $this->container = $container;
     }
 
-    protected function startAsService(InputInterface $input, LoggerInterface $logger): int
+    /**
+     * Forks a detached instance of this command.
+     *
+     * @param InputInterface $input The input
+     *
+     * @return int The return code
+     */
+    protected function startAsService(InputInterface $input): int
     {
         $runas_uid = null;
         $runas_gid = null;
@@ -148,7 +143,7 @@ class MasterCommand extends Command
             if ($input->getOption('group')) {
                 $group = posix_getgrnam($input->getOption('group'));
                 if (!$group) {
-                    $logger->critical('Group '.$input->getOption('group').' is unknown');
+                    $this->logger->critical('Group '.$input->getOption('group').' is unknown');
 
                     return 1;
                 }
@@ -156,14 +151,14 @@ class MasterCommand extends Command
             }
 
             if (!$input->getOption('user')) {
-                $logger->critical("You're running as root, you must specify a user");
+                $this->logger->critical("You're running as root, you must specify a user");
 
                 return 1;
             }
 
             $user = posix_getpwnam($input->getOption('user'));
             if (!$user) {
-                $logger->critical('User '.$input->getOption('user').' is unknown');
+                $this->logger->critical('User '.$input->getOption('user').' is unknown');
 
                 return 1;
             }
@@ -175,7 +170,7 @@ class MasterCommand extends Command
 
         switch (($pid = pcntl_fork())) {
             case -1:
-                $logger->critical('Failed to fork');
+                $this->logger->critical('Failed to fork');
 
                 return 1;
             case 0:
@@ -192,7 +187,7 @@ class MasterCommand extends Command
 
                 if ($input->getOption('pid')) {
                     if (!file_put_contents($input->getOption('pid'), $pid)) {
-                        $logger->critical('Failed to write to '.$input->getOption('pid'));
+                        $this->logger->critical('Failed to write to '.$input->getOption('pid'));
 
                         return 1;
                     }
@@ -201,7 +196,7 @@ class MasterCommand extends Command
                 if ($input->getOption('log')) {
                     $fdout = fopen($input->getOption('log'), 'ab');
                     if (!$fdout) {
-                        $logger->critical('Failed to open '.$input->getOption('log'));
+                        $this->logger->critical('Failed to open '.$input->getOption('log'));
 
                         return 1;
                     }
@@ -231,7 +226,7 @@ class MasterCommand extends Command
                 sleep(2);
                 $status = 0;
                 if (0 != pcntl_waitpid($pid, $status, WNOHANG)) {
-                    $logger->critical('Forked service exited abnormally.');
+                    $this->logger->critical('Forked service exited abnormally.');
 
                     return 1;
                 }
@@ -275,13 +270,102 @@ class MasterCommand extends Command
     }
 
     /**
+     * Transform the parsed group configs into instances of GroupConfigInterface.
+     *
+     * @internal
+     *
+     * @return GroupConfigInterface[] The list of group configs
+     */
+    protected function buildGroupConfigs(): array
+    {
+        /** @var array<GroupConfigInterface> */
+        $allGroupConfigs = [];
+        $groupConfigs = $this->getContainer()->getParameter('distributed_architecture.groups');
+        if ($groupConfigs) {
+            $allGroupConfigs = $this->parseGroupConfigs($groupConfigs);
+        }
+
+        $groupConfigs = $this->getContainer()->getParameter('distributed_architecture.queue_groups');
+        if ($groupConfigs) {
+            $queueConfig = $this->parseQueueConfig($groupConfigs);
+            // Make sure group names are unique
+            if ($allGroupConfigs) {
+                foreach ($queueConfig as $queueGroupConfig) {
+                    foreach ($allGroupConfigs as $groupConfig) {
+                        if ($queueGroupConfig->getName() === $groupConfig->getName()) {
+                            $this->logger->critical('Duplicate group name for '.$queueGroupConfig->getName());
+
+                            return 1;
+                        }
+                    }
+                }
+            }
+            $allGroupConfigs = array_merge($allGroupConfigs, $queueConfig);
+        }
+
+        return $allGroupConfigs;
+    }
+
+    /**
+     * Check the array of GroupConfigInterface.
+     *
+     * @param GroupConfigInterface[] $configs the configs to check
+     *
+     * @internal
+     *
+     * @return GroupConfigInterface[] the valid group configs that are runnable
+     */
+    protected function checkGroupConfigs(array $groupConfigs): array
+    {
+        $validGroupConfigs = [];
+        foreach ($groupConfigs as $groupConfig) {
+            if ($this->checkGroupCommand($groupConfig)) {
+                $validGroupConfigs[] = $groupConfig;
+            }
+        }
+
+        return $validGroupConfigs;
+    }
+
+    /**
+     * Perform a check on a group. If the group's command is locally known and is an instance of AbstractSlaveCommand or AbstractSlaveQueueCommand, it calls the command's preRunCheck method, which allows the command to run some checks, once, before all its instances are run.
+     *
+     * @internal
+     *
+     * @param GroupConfigInterface $groupConfig the group config to check
+     *
+     * @return bool true if the command is valid, else false
+     */
+    protected function checkGroupCommand(GroupConfigInterface $groupConfig): bool
+    {
+        // If the command is executed in the same environment as the master's
+        // we can perform a few checks
+
+        $commandStr = explode(' ', $groupConfig->getCommand())[0];
+        $app = $this->getApplication();
+
+        // This environment knows nothing about this command
+        if (!$app->has($commandStr)) {
+            return true;
+        }
+        $command = $app->get($commandStr);
+
+        if (!($command instanceof AbstractSlaveCommand)
+        && !($command instanceof AbstractSlaveQueueCommand)) {
+            return true;
+        }
+
+        return $command->preRunCheck($groupConfig, $this->logger);
+    }
+
+    /**
      * Transform the groups configuration as it was parsed by Configuration into an array of GroupConfigInterface.
      *
      * @internal
      *
      * @return GroupConfigInterface[] The list of group configs
      */
-    protected function parseConfig(array $groups): array
+    protected function parseGroupConfigs(array $groups): array
     {
         $groupConfigs = [];
         foreach ($groups as $name => $group) {
