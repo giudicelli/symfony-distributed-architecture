@@ -13,6 +13,7 @@ use giudicelli\DistributedArchitectureBundle\Handler\Remote\Config as RemoteConf
 use giudicelli\DistributedArchitectureBundle\Handler\Remote\Consumer\Config as RemoteConsumerConfig;
 use giudicelli\DistributedArchitectureBundle\Handler\Remote\Feeder\Config as RemoteFeederConfig;
 use giudicelli\DistributedArchitectureBundle\Launcher;
+use giudicelli\DistributedArchitectureBundle\Logger\LoggerDecorator;
 use giudicelli\DistributedArchitectureBundle\Logger\ServiceLogger;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -61,6 +62,8 @@ class MasterCommand extends Command
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
+        LoggerDecorator::configure(true, false);
+
         if ($this->logger) {
             $this->logger = new ServiceLogger($this->logger);
         } else {

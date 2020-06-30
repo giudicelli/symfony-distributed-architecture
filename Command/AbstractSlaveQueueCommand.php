@@ -7,6 +7,7 @@ use giudicelli\DistributedArchitecture\Helper\InterProcessLogger;
 use giudicelli\DistributedArchitecture\Slave\HandlerInterface;
 use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
 use giudicelli\DistributedArchitectureBundle\HandlerQueue;
+use giudicelli\DistributedArchitectureBundle\Logger\LoggerDecorator;
 use giudicelli\DistributedArchitectureQueue\Slave\Queue\Feeder\FeederInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -33,6 +34,8 @@ abstract class AbstractSlaveQueueCommand extends Command
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
+        LoggerDecorator::configure(true, true);
+
         try {
             $handler = new HandlerQueue($input->getOption('gda-params'), $this->eventsHandler);
 

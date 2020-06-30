@@ -123,7 +123,7 @@ distributed_architecture:
 ';
         $container = $this->buildContainer($config);
         $returnValue = $this->executeCommand($container, $this->logger);
-        $this->assertEquals(1, $returnValue, 'Command exits with code 1');
+        $this->assertEquals(0, $returnValue, 'Command exits with code 0');
 
         $output = $this->logger->getOutput();
         sort($output);

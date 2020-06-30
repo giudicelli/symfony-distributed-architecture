@@ -7,6 +7,7 @@ use giudicelli\DistributedArchitecture\Helper\InterProcessLogger;
 use giudicelli\DistributedArchitecture\Slave\HandlerInterface;
 use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
 use giudicelli\DistributedArchitectureBundle\Handler;
+use giudicelli\DistributedArchitectureBundle\Logger\LoggerDecorator;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -32,6 +33,8 @@ abstract class AbstractSlaveCommand extends Command
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
+        LoggerDecorator::configure(true, true);
+
         try {
             if ($input->getOption('gda-params')) {
                 $handler = new Handler($input->getOption('gda-params'), $this->eventsHandler);
@@ -56,7 +59,8 @@ abstract class AbstractSlaveCommand extends Command
      * Commands can implement this method to have the master perform a pre run check.
      *
      * @param GroupConfigInterface $groupConfig the group config associated with this command
-     * @param LoggerInterface $logger the logger
+     * @param LoggerInterface      $logger      the logger
+     *
      * @return bool true if the command is valid else false
      */
     public function preRunCheck(GroupConfigInterface $groupConfig, LoggerInterface $logger): bool
