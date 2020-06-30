@@ -15,6 +15,7 @@ use giudicelli\DistributedArchitectureBundle\Handler\Remote\Feeder\Config as Rem
 use giudicelli\DistributedArchitectureBundle\Launcher;
 use giudicelli\DistributedArchitectureBundle\Logger\LoggerDecorator;
 use giudicelli\DistributedArchitectureBundle\Logger\ServiceLogger;
+use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -28,7 +29,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @author Frédéric Giudicelli
  */
-class MasterCommand extends Command
+class MasterCommand extends Command implements LoggerAwareInterface
 {
     protected static $defaultName = 'distributed_architecture:run-master';
 
