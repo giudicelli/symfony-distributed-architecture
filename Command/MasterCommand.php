@@ -295,7 +295,7 @@ class MasterCommand extends Command
                         if ($queueGroupConfig->getName() === $groupConfig->getName()) {
                             $this->logger->critical('Duplicate group name for '.$queueGroupConfig->getName());
 
-                            return 1;
+                            return [];
                         }
                     }
                 }
