@@ -16,14 +16,15 @@ $ composer require giudicelli/symfony-distributed-architecture
 To run your distributed architecture you will mainly need to use one command "bin/console distributed_architecture:run-master". It will parse the configuration and launch all processes.
 
 The following options are handled by "distributed_architecture:run-master":
-- --max-running-time will gracefully stop all slave processes after a certain duration. It's usually a good idea to use this as Symfony commands tend to use more and more memory over time. A duration of 3600 seconds is in most case a good value. Default is 0, meaning the master will only exit once all the slaves a exited.
-- --max-process-timeout Set the maximum number of times a process can timeout before it is considered dead and removed. Default is 3.
-- --timeout Set the timeout for the master. Default is 300.
-- --service Run as detached service, even when all processes will have exited, "distributed_architecture:run-master" will not exit. You can install [symfony-distributed-architecture-admin](https://github.com/giudicelli/symfony-distributed-architecture-admin) to control "distributed_architecture:run-master".
-- --user When --service is activated, run as this user. Ignored if not root.
-- --group When --service is activated, run as this group. Ignored if not root.
-- --log When --service is activated, specify in which file to log.
-- --pid When --service is activated, specify in which file to store the PID of the service.
+- **--max-running-time** will gracefully stop all slave processes after a certain duration. It's usually a good idea to use this as Symfony commands tend to use more and more memory over time. A duration of 3600 seconds is in most case a good value. Default is 0, meaning the master will only exit once all the slaves a exited.
+- **--max-process-timeout** Set the maximum number of times a process can timeout before it is considered dead and removed. Default is 3.
+- **--timeout** Set the timeout for the master. Default is 300.
+- **--service** Run as detached service, even when all processes will have exited, "distributed_architecture:run-master" will not exit. You can install [symfony-distributed-architecture-admin](https://github.com/giudicelli/symfony-distributed-architecture-admin) to control "distributed_architecture:run-master".
+- **--user** When --service is activated, run as this user. Ignored if not root.
+- **--group** When --service is activated, run as this group. Ignored if not root.
+- **--log** When --service is activated, specify in which file to log, default is %kernel.logs_dir%/distributed_architecture.log.
+- **--pid** When --service is activated, specify in which file to store the PID of the service, default is %kernel.logs_dir%/distributed_architecture.pid.
+- **--stop** perform a clean stop of the previously started service, you need to specify the same values for --timeout and --pid as when started the service, if you did not specify any of those just ignore those options.
 
 ### Configuration
 

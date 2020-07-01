@@ -5,6 +5,7 @@ namespace giudicelli\DistributedArchitectureBundle\Command;
 use giudicelli\DistributedArchitecture\Config\GroupConfig;
 use giudicelli\DistributedArchitecture\Config\GroupConfigInterface;
 use giudicelli\DistributedArchitecture\Config\ProcessConfigInterface;
+use giudicelli\DistributedArchitecture\Helper\ProcessHelper;
 use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
 use giudicelli\DistributedArchitectureBundle\Handler\Local\Config as LocalConfig;
 use giudicelli\DistributedArchitectureBundle\Handler\Local\Consumer\Config as LocalConsumerConfig;
@@ -71,6 +72,10 @@ class MasterCommand extends Command implements LoggerAwareInterface
             $this->logger = new ServiceLogger(new ConsoleLogger($output));
         }
 
+        if ($input->getOption('stop')) {
+            return $this->stop($input) ? 0 : 1;
+        }
+
         // Parse the config
         $groupConfigs = $this->buildGroupConfigs();
         if (!$groupConfigs) {
@@ -112,8 +117,8 @@ class MasterCommand extends Command implements LoggerAwareInterface
             ->runMaster($runAsService)
         ;
 
-        if ($input->getOption('pid')) {
-            @unlink($input->getOption('pid'));
+        if ($runAsService) {
+            @unlink($this->getPidFile($input));
         }
 
         return 0;
@@ -127,6 +132,48 @@ class MasterCommand extends Command implements LoggerAwareInterface
     public function setContainer(ContainerInterface $container = null)
     {
         $this->container = $container;
+    }
+
+    /**
+     * Stops a previously started service.
+     *
+     * @param InputInterface $input The input
+     *
+     * @return bool Success or failure
+     */
+    protected function stop(InputInterface $input): bool
+    {
+        $pidFile = $this->getPidFile($input);
+        if (!file_exists($pidFile)) {
+            return false;
+        }
+        $pid = file_get_contents($pidFile);
+        if (!$pid) {
+            return false;
+        }
+
+        if (!ProcessHelper::killBinary(PHP_BINARY, $pid, SIGTERM)) {
+            return false;
+        }
+
+        // Get the configured timeout of the master launcher
+        $launcher = new Launcher(true, $this->logger);
+        if ($input->getOption('timeout')) {
+            $launcher->setTimeout($input->getOption('timeout'));
+        }
+        $timeout = $launcher->getTimeout() + 2;
+
+        $startTime = time();
+        while ((time() - $startTime) < $timeout) {
+            if (!posix_kill($pid, 0)) {
+                // Process is gone
+                return true;
+            }
+            usleep(300000);
+        }
+
+        // Process is still alive...
+        return false;
     }
 
     /**
@@ -189,26 +236,28 @@ class MasterCommand extends Command implements LoggerAwareInterface
                 }
                 posix_setsid();
 
-                if ($input->getOption('pid')) {
-                    if (!file_put_contents($input->getOption('pid'), $pid)) {
-                        $this->logger->critical('Failed to write to '.$input->getOption('pid'));
+                if (!file_put_contents($this->getPidFile($input), $pid)) {
+                    $this->logger->critical('Failed to write to '.$input->getOption('pid'));
 
-                        return 1;
-                    }
+                    return 1;
                 }
 
                 if ($input->getOption('log')) {
-                    $fdout = fopen($input->getOption('log'), 'ab');
-                    if (!$fdout) {
-                        $this->logger->critical('Failed to open '.$input->getOption('log'));
-
-                        return 1;
-                    }
-                    \eio_dup2($fdout, STDOUT);
-                    \eio_dup2($fdout, STDERR);
-                    \eio_event_loop();
-                    fclose($fdout);
+                    $logFile = $input->getOption('log');
+                } else {
+                    $logFile = $this->getContainer()->getParameter('kernel.logs_dir').DIRECTORY_SEPARATOR.'distributed_architecture.log';
                 }
+
+                $fdout = fopen($logFile, 'ab');
+                if (!$fdout) {
+                    $this->logger->critical('Failed to open '.$logFile);
+
+                    return 1;
+                }
+                \eio_dup2($fdout, STDOUT);
+                \eio_dup2($fdout, STDERR);
+                \eio_event_loop();
+                fclose($fdout);
 
                 $args = [];
                 foreach ($_SERVER['argv'] as $arg) {
@@ -259,6 +308,22 @@ class MasterCommand extends Command implements LoggerAwareInterface
         return $this->container;
     }
 
+    /**
+     * Returned the PID file.
+     *
+     * @param InputInterface $input The input
+     *
+     * @return string The PID file
+     */
+    protected function getPidFile(InputInterface $input): string
+    {
+        if ($input->getOption('pid')) {
+            return $input->getOption('pid');
+        }
+
+        return $this->getContainer()->getParameter('kernel.logs_dir').DIRECTORY_SEPARATOR.'distributed_architecture.pid';
+    }
+
     protected function configure()
     {
         $this->setDescription('Launch all configured processes');
@@ -271,6 +336,7 @@ class MasterCommand extends Command implements LoggerAwareInterface
         $this->addOption('group', null, InputOption::VALUE_REQUIRED, 'When --service is activated, run as this group. Ignored if not root.');
         $this->addOption('log', null, InputOption::VALUE_REQUIRED, 'When --service is activated, specify in which file to log.');
         $this->addOption('pid', null, InputOption::VALUE_REQUIRED, 'When --service is activated, specify in which file to store the PID of the service.');
+        $this->addOption('stop', null, InputOption::VALUE_NONE, 'Stop the previously started service, if you specified a --pid option you will need to specify it again.');
     }
 
     /**
