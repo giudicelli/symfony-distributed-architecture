@@ -2,8 +2,10 @@
 
 namespace giudicelli\DistributedArchitectureBundle;
 
+use giudicelli\DistributedArchitecture\Config\ProcessConfigInterface;
 use giudicelli\DistributedArchitecture\Master\EventsInterface;
 use giudicelli\DistributedArchitectureQueue\Slave\HandlerQueue as HandlerQueue_;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 /**
  * {@inheritdoc}
@@ -12,16 +14,24 @@ use giudicelli\DistributedArchitectureQueue\Slave\HandlerQueue as HandlerQueue_;
  */
 class HandlerQueue extends HandlerQueue_
 {
-    /** @var EventsInterface */
+    /** @var null|EventsInterface */
     private $eventsHandler;
 
+    /** @var null|ParameterBagInterface */
+    private $parameters;
+
     /**
-     * @param string          $params        the JSON encoded params passed by the master process
-     * @param EventsInterface $eventsHandler the optional events handler
+     * @param string                     $params        the JSON encoded params passed by the master process
+     * @param null|EventsInterface       $eventsHandler the optional events handler
+     * @param null|ParameterBagInterface $parameters    the optional parameter bag
      */
-    public function __construct(string $params, EventsInterface $eventsHandler = null)
-    {
+    public function __construct(
+        string $params,
+        EventsInterface $eventsHandler = null,
+        ParameterBagInterface $parameters = null
+    ) {
         $this->eventsHandler = $eventsHandler;
+        $this->parameters = $parameters;
         parent::__construct($params);
     }
 
@@ -35,5 +45,18 @@ class HandlerQueue extends HandlerQueue_
         }
 
         return $this->eventsHandler;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function getPidFileFromConfig(ProcessConfigInterface $config): string
+    {
+        if (!$this->parameters) {
+            return parent::getPidFileFromConfig($config);
+        }
+        $uniqueId = sha1($this->id.'-'.$this->groupId.'-'.$this->groupConfig->getHash().'-'.$config->getHash());
+
+        return $this->parameters->get('kernel.logs_dir').DIRECTORY_SEPARATOR.'gda-'.$uniqueId.'.pid';
     }
 }

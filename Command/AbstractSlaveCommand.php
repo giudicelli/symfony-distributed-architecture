@@ -13,6 +13,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 /**
  * A Symfony abstract slave command. It handles the launching of the Handler class.
@@ -21,12 +22,18 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 abstract class AbstractSlaveCommand extends Command
 {
-    /** @var EventsHandler */
+    /** @var null|EventsHandler */
     private $eventsHandler;
 
-    public function __construct(?EventsHandler $eventsHandler = null)
-    {
+    /** @var null|ParameterBagInterface */
+    private $parameters;
+
+    public function __construct(
+        EventsHandler $eventsHandler = null,
+        ParameterBagInterface $parameters = null
+    ) {
         $this->eventsHandler = $eventsHandler;
+        $this->parameters = $parameters;
 
         parent::__construct();
     }
@@ -37,7 +44,11 @@ abstract class AbstractSlaveCommand extends Command
 
         try {
             if ($input->getOption('gda-params')) {
-                $handler = new Handler($input->getOption('gda-params'), $this->eventsHandler);
+                $handler = new Handler(
+                    $input->getOption('gda-params'),
+                    $this->eventsHandler,
+                    $this->parameters
+                );
 
                 $me = $this;
                 $handler->run(function (HandlerInterface $handler) use ($me) {

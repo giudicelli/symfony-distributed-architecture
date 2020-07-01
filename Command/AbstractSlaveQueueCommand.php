@@ -14,6 +14,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 /**
  * A Symfony abstract slave queue command. It handles the launching of the Handler class.
@@ -22,12 +23,18 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 abstract class AbstractSlaveQueueCommand extends Command
 {
-    /** @var EventsHandler */
+    /** @var null|EventsHandler */
     private $eventsHandler;
 
-    public function __construct(?EventsHandler $eventsHandler = null)
-    {
+    /** @var null|ParameterBagInterface */
+    private $parameters;
+
+    public function __construct(
+        EventsHandler $eventsHandler = null,
+        ParameterBagInterface $parameters = null
+    ) {
         $this->eventsHandler = $eventsHandler;
+        $this->parameters = $parameters;
 
         parent::__construct();
     }
@@ -37,7 +44,11 @@ abstract class AbstractSlaveQueueCommand extends Command
         LoggerDecorator::configure(true, true);
 
         try {
-            $handler = new HandlerQueue($input->getOption('gda-params'), $this->eventsHandler);
+            $handler = new HandlerQueue(
+                $input->getOption('gda-params'),
+                $this->eventsHandler,
+                $this->parameters
+            );
 
             $me = $this;
             $handler->runQueue(function (HandlerInterface $handler, array $item) use ($me) {

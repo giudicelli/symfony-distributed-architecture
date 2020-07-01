@@ -80,12 +80,12 @@ class FakeKernel implements KernelInterface
 
     public function getCacheDir()
     {
-        return '';
+        return sys_get_temp_dir();
     }
 
     public function getLogDir()
     {
-        return '';
+        return sys_get_temp_dir();
     }
 
     public function getCharset()
