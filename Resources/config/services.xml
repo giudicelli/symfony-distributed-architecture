@@ -14,19 +14,5 @@
         <service id="giudicelli\DistributedArchitectureBundle\Logger\LoggerDecorator" decorates="logger" />
 
         <service id="distributed_architecture.logger" alias="giudicelli\DistributedArchitectureBundle\Logger\LoggerDecorator"/>
-
-        <!--
-        <service id="app.default_logger" class="Symfony\Component\HttpKernel\Log\Logger"/>
-
-        <service id="giudicelli\DistributedArchitectureBundle\Logger\DefaultLogger" class="giudicelli\DistributedArchitectureBundle\Logger\DefaultLogger">
-            <argument key="$logger" type="service" id="app.default_logger"/>
-        </service>
-
-        <service id="distributed_architecture.default_logger" alias="giudicelli\DistributedArchitectureBundle\Logger\DefaultLogger"/>
-
-        <service id="logger" alias="giudicelli\DistributedArchitectureBundle\Logger\DefaultLogger"/>
-
-        <service id="Psr\Log\LoggerInterface" alias="logger"/>
-        -->
     </services>
 </container>
