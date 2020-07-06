@@ -6,6 +6,9 @@ use giudicelli\DistributedArchitecture\Config\GroupConfigInterface;
 use giudicelli\DistributedArchitecture\Helper\InterProcessLogger;
 use giudicelli\DistributedArchitecture\Slave\HandlerInterface;
 use giudicelli\DistributedArchitectureBundle\Event\EventsHandler;
+use giudicelli\DistributedArchitectureBundle\Event\QueueItemFailedEvent;
+use giudicelli\DistributedArchitectureBundle\Event\QueueItemHandledEvent;
+use giudicelli\DistributedArchitectureBundle\Event\QueueItemReceivedEvent;
 use giudicelli\DistributedArchitectureBundle\HandlerQueue;
 use giudicelli\DistributedArchitectureBundle\Logger\LoggerDecorator;
 use giudicelli\DistributedArchitectureQueue\Slave\Queue\Feeder\FeederInterface;
@@ -15,6 +18,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * A Symfony abstract slave queue command. It handles the launching of the Handler class.
@@ -24,17 +28,22 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 abstract class AbstractSlaveQueueCommand extends Command
 {
     /** @var null|EventsHandler */
-    private $eventsHandler;
+    protected $eventsHandler;
 
     /** @var null|ParameterBagInterface */
-    private $parameters;
+    protected $parameters;
+
+    /** @var null|EventDispatcherInterface */
+    protected $eventDispatcher;
 
     public function __construct(
         EventsHandler $eventsHandler = null,
-        ParameterBagInterface $parameters = null
+        ParameterBagInterface $parameters = null,
+        EventDispatcherInterface $eventDispatcher = null
     ) {
         $this->eventsHandler = $eventsHandler;
         $this->parameters = $parameters;
+        $this->eventDispatcher = $eventDispatcher;
 
         parent::__construct();
     }
@@ -52,7 +61,7 @@ abstract class AbstractSlaveQueueCommand extends Command
 
             $me = $this;
             $handler->runQueue(function (HandlerInterface $handler, array $item) use ($me) {
-                $me->handleItem($handler, $item);
+                $me->doHandleItem($handler, $item);
             }, $this->getFeeder());
         } catch (\Exception $e) {
             InterProcessLogger::sendLog('critical', $e->getMessage());
@@ -96,4 +105,23 @@ abstract class AbstractSlaveQueueCommand extends Command
      * @param array            $item    the item to handle
      */
     abstract protected function handleItem(HandlerInterface $handler, array $item): void;
+
+    private function doHandleItem(HandlerInterface $handler, array $item): void
+    {
+        if ($this->eventDispatcher) {
+            $this->eventDispatcher->dispatch(new QueueItemReceivedEvent($handler, $item), QueueItemReceivedEvent::NAME);
+        }
+
+        try {
+            $this->handleItem($handler, $item);
+            if ($this->eventDispatcher) {
+                $this->eventDispatcher->dispatch(new QueueItemHandledEvent($handler, $item), QueueItemHandledEvent::NAME);
+            }
+        } catch (\Throwable $throwable) {
+            if ($this->eventDispatcher) {
+                $this->eventDispatcher->dispatch(new QueueItemFailedEvent($handler, $item, $throwable), QueueItemFailedEvent::NAME);
+            }
+            InterProcessLogger::sendLog('error', $throwable->getMessage());
+        }
+    }
 }
