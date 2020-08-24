@@ -31,6 +31,7 @@ class Configuration implements ConfigurationInterface
         $groupsNode = $rootNode
             ->arrayNode('groups')
             ->info('The list of processes groups.')
+            ->useAttributeAsKey('name')
             ->arrayPrototype()
             ->children()
         ;
@@ -39,6 +40,7 @@ class Configuration implements ConfigurationInterface
         $queueGroupsNode = $rootNode
             ->arrayNode('queue_groups')
             ->info('The list of feeder/consumers processes groups.')
+            ->useAttributeAsKey('name')
             ->arrayPrototype()
             ->children()
         ;
